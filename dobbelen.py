@@ -7,7 +7,6 @@ import random
 
 INVALID_ANSWER = "Ongeldige invoer. Probeer het opnieuw."
 
-
 def play(playing_balance):
     print()
     print("Welkom aan de dobbeltafel.")
