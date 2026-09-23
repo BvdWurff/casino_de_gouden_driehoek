@@ -4,9 +4,9 @@ SEPARATOR = '-' * 32
 INVALID_ANSWER = "Ongeldige invoer. Probeer het opnieuw."
 
 AVAILABLE_GAMES = {
-    "roulette": roulette,
-    "dobbelen": dobbelen,
-    "fruitmachine": fruitmachine,
+    "1. Roulette": roulette,
+    "2. Dobbelen": dobbelen,
+    "3. Fruitmachine": fruitmachine,
 }
 
 def choose_game(playing_balance):

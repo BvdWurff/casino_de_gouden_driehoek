@@ -55,14 +55,14 @@ def get_gamble_choice():
 
 
 def play(playing_balance):
-    print()
-    print("Welkom aan de roulettetafel.")
-    print()
-    print("Het doel van roulette is om te voorspellen waar het balletje zal landen.")
-    print("Kies waarop u wilt inzetten en bepaal vervolgens uw inzet.")
-    print("Het balletje kan op één van de 37 getallen van 0 tot en met 36 landen.")
-    print("In het overzicht ziet u per keuze hoeveel winst u kunt behalen.")
-    print()
+    print('''
+Welkom aan de roulettetafel.
+
+Het doel van roulette is om te voorspellen waar het balletje zal landen.
+Kies waarop u wilt inzetten en bepaal vervolgens uw inzet.
+Het balletje kan op één van de 37 getallen van 0 tot en met 36 landen.
+In het overzicht ziet u per keuze hoeveel winst u kunt behalen.
+''')
     stake = new_stake(playing_balance)
     print()
     print("Uw inzet is geaccepteerd. Het spel kan beginnen. Veel geluk!")
