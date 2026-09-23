@@ -1,12 +1,12 @@
-import dobbelen
-import roulette
+from games import roulette, dobbelen, fruitmachine
 
 SEPARATOR = '-' * 32
 INVALID_ANSWER = "Ongeldige invoer. Probeer het opnieuw."
 
 AVAILABLE_GAMES = {
     "roulette": roulette,
-    "dobbelen": dobbelen
+    "dobbelen": dobbelen,
+    "fruitmachine": fruitmachine,
 }
 
 def choose_game(playing_balance):

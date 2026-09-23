@@ -35,7 +35,7 @@ def new_stake(playing_balance):
                 break
         except ValueError:
             print(INVALID_ANSWER)
-    return check_stake
+
 
 
 def get_gamble_choice():
