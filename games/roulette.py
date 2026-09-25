@@ -1,8 +1,9 @@
 import time
 import random
 
-SEPARATOR = '-' * 32
-INVALID_ANSWER = "Ongeldige invoer. Probeer het opnieuw."
+SEPARATOR = '-' * 50
+CASINO_NAME = "Casino de Gouden Driehoek"
+INVALID_INPUT = "Ongeldige invoer. Probeer het opnieuw."
 
 AVAILABLE_CHOICES = [
     "1. Rood   - winst: 1x inzet",
@@ -34,7 +35,7 @@ def new_stake(playing_balance):
             else:
                 break
         except ValueError:
-            print(INVALID_ANSWER)
+            print(INVALID_INPUT)
 
 
 
@@ -47,7 +48,7 @@ def get_gamble_choice():
     print()
     gamble_choice = input("Uw keuze: ")
     while gamble_choice not in ("1", "2", "3", "4", "5", "6", "0"):
-        print(INVALID_ANSWER)
+        print(INVALID_INPUT)
         print()
         gamble_choice = input("Uw keuze: ")
     gamble_choice = int(gamble_choice)
@@ -83,9 +84,9 @@ In het overzicht ziet u per keuze hoeveel winst u kunt behalen.
                     if 0 <= number <= 36:
                         break
                     else:
-                        print(INVALID_ANSWER)
+                        print(INVALID_INPUT)
                 except ValueError:
-                    print(INVALID_ANSWER)
+                    print(INVALID_INPUT)
 
         if stake > playing_balance:
             print()
@@ -93,7 +94,7 @@ In het overzicht ziet u per keuze hoeveel winst u kunt behalen.
             print("Wilt u uw saldo verhogen?")
             answer = input("Uw keuze (ja/nee): ").lower()
             while answer not in ("ja", "nee"):
-                print(INVALID_ANSWER)
+                print(INVALID_INPUT)
                 print()
                 answer = input("Uw keuze (ja/nee): ").lower()
 
@@ -110,11 +111,11 @@ In het overzicht ziet u per keuze hoeveel winst u kunt behalen.
                     if playing_balance >= stake:
                         break
                     elif playing_balance <= 0:
-                        print(INVALID_ANSWER)
+                        print(INVALID_INPUT)
                     else:
                         print(f"Het nieuwe saldo moet minimaal €{stake:.2f} bedragen.")
                 except ValueError:
-                    print(INVALID_ANSWER)
+                    print(INVALID_INPUT)
             print()
             continue
 
@@ -182,7 +183,7 @@ In het overzicht ziet u per keuze hoeveel winst u kunt behalen.
         round_choice = input("Wat wilt u doen? ")
         print()
         while round_choice not in ("1", "2", "3", "4", "0"):
-            print(INVALID_ANSWER)
+            print(INVALID_INPUT)
             print()
             round_choice = input("Wat wilt u doen? ")
         round_choice = int(round_choice)

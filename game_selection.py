@@ -1,34 +1,40 @@
 from games import roulette, dobbelen, fruitmachine
 
-SEPARATOR = '-' * 32
-INVALID_ANSWER = "Ongeldige invoer. Probeer het opnieuw."
+SEPARATOR = '-' * 50
+CASINO_NAME = "Casino de Gouden Driehoek"
+INVALID_INPUT = "\nOngeldige invoer. Probeer het opnieuw.\n"
 
 AVAILABLE_GAMES = {
-    "1. Roulette": roulette,
-    "2. Dobbelen": dobbelen,
-    "3. Fruitmachine": fruitmachine,
+    1: ("Roulette", roulette),
+    2: ("Dobbelen", dobbelen),
+    3: ("Fruitmachine", fruitmachine),
 }
 
 def choose_game(playing_balance):
     while True:
-        print("Kies een spel uit de onderstaande lijst of typ 'stoppen' om het casino te verlaten.")
-        print()
-        print("Beschikbare spellen:")
-        print(SEPARATOR)
-        for game in AVAILABLE_GAMES:
-            print(game.title())
-        print(SEPARATOR)
-        print()
-        selected_game = input("Uw keuze: ").lower()
-        if selected_game == "stoppen":
+        print(f"""{CASINO_NAME} - Spellen
+{SEPARATOR}
+Beschikbare spellen:
+""")
+        for number, game in AVAILABLE_GAMES.items():
+            print(f"{number}. {game[0]}")
+        print(f"""
+0. Terug naar hoofdmenu
+{SEPARATOR}""")
+        try:
+            choice = int(input("Kies een optie: "))
             print()
-            print(f"U verlaat het casino met een eindsaldo van €{playing_balance:.2f}.")
-            print()
-            print("Bedankt voor uw bezoek aan Casino de Gouden Driehoek.")
-            print("Graag tot ziens!")
-            exit(0)
-        elif selected_game in AVAILABLE_GAMES:
-            playing_balance = AVAILABLE_GAMES[selected_game].play(playing_balance)
-        else:
-            print()
-            print(INVALID_ANSWER)
+
+            if choice == 0:
+                return playing_balance
+
+            if choice in AVAILABLE_GAMES:
+                game_name, game_module = AVAILABLE_GAMES[choice]
+                playing_balance = game_module.play(playing_balance)
+                return playing_balance
+
+            print(INVALID_INPUT)
+
+        except ValueError:
+            print(INVALID_INPUT)
+
