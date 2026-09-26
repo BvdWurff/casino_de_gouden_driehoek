@@ -1,5 +1,6 @@
-import datetime
 import game_selection
+from utils import blank_lines
+import datetime
 import time
 
 
@@ -11,6 +12,7 @@ SEPARATOR = "-" * 50
 MIN_AGE = 18
 INVALID_INPUT = "\nOngeldige invoer. Probeer het opnieuw.\n"
 CASINO_NAME = "Casino de Gouden Driehoek"
+
 
 # Fixed casino costs
 ADMISSION_PRICE = 5.00
@@ -38,70 +40,80 @@ def get_user_input():
         tuple: The guest's first name, surname, birth date, gender
         and starting balance.
     """
-    print(f"""
+    print()
+    test = input("Is dit een test run? (ja/nee) ").lower()
+    if test == 'ja':
+        blank_lines(2)
+        first_name = 'Bart'
+        surname = 'van der Wurff'
+        birth_date = datetime.datetime(1985, 8, 26)
+        gender = 'man'
+        starting_balance = 100.00
+
+    else:
+        print(f"""
 Vul onderstaande vragen in om toegang te krijgen.
 {SEPARATOR}
 """)
+        while True:
+            first_name = input("Wat is uw voornaam? ").title()
 
-    while True:
-        first_name = input("Wat is uw voornaam? ").title()
-
-        if first_name.isalpha():
-            break
-        else:
-            print(INVALID_INPUT)
-
-    while True:
-        surname_prefix = input("Wat zijn uw tussenvoegsels? (druk op Enter indien niet van toepassing) ")
-
-        if not surname_prefix or surname_prefix.replace(" ", "").isalpha():
-            break
-        else:
-            print(INVALID_INPUT)
-
-    while True:
-        surname = input("Wat is uw achternaam? ").title()
-
-        if surname.isalpha():
-            break
-        else:
-            print(INVALID_INPUT)
-
-    if surname_prefix:
-        surname = surname_prefix + " " + surname
-
-    while True:
-        try:
-            date_of_birth = input("Wat is uw geboortedatum? (dd-mm-jjjj) ")
-            birth_date = datetime.datetime.strptime(date_of_birth, "%d-%m-%Y")
-            current_date = datetime.datetime.now()
-            if current_date < birth_date:
-                print(INVALID_INPUT)
-            else:
-                break
-        except ValueError:
-            print(INVALID_INPUT)
-
-    while True:
-        gender = input("Wat is uw geslacht? (Man / Vrouw / Anders) ").lower()
-
-        if gender:
-            break
-        else:
-            print(INVALID_INPUT)
-
-    while True:
-        try:
-            starting_balance = float(input("Wat is uw speelbudget? € "))
-            if starting_balance > 0:
+            if first_name.isalpha():
                 break
             else:
                 print(INVALID_INPUT)
-        except ValueError:
-            print(INVALID_INPUT)
 
-    print(SEPARATOR)
-    print()
+        while True:
+            surname_prefix = input("Wat zijn uw tussenvoegsels? (druk op Enter indien niet van toepassing) ")
+
+            if not surname_prefix or surname_prefix.replace(" ", "").isalpha():
+                break
+            else:
+                print(INVALID_INPUT)
+
+        while True:
+            surname = input("Wat is uw achternaam? ").title()
+
+            if surname.isalpha():
+                break
+            else:
+                print(INVALID_INPUT)
+
+        if surname_prefix:
+            surname = surname_prefix + " " + surname
+
+        while True:
+            try:
+                date_of_birth = input("Wat is uw geboortedatum? (dd-mm-jjjj) ")
+                birth_date = datetime.datetime.strptime(date_of_birth, "%d-%m-%Y")
+                current_date = datetime.datetime.now()
+                if current_date < birth_date:
+                    print(INVALID_INPUT)
+                else:
+                    break
+            except ValueError:
+                print(INVALID_INPUT)
+
+        while True:
+            gender = input("Wat is uw geslacht? (Man / Vrouw / Anders) ").lower()
+
+            if gender:
+                break
+            else:
+                print(INVALID_INPUT)
+
+        while True:
+            try:
+                starting_balance = float(input("Wat is uw speelbudget? € "))
+                if starting_balance > 0:
+                    break
+                else:
+                    print(INVALID_INPUT)
+            except ValueError:
+                print(INVALID_INPUT)
+
+        print(SEPARATOR)
+        print()
 
     return first_name, surname, birth_date, gender, starting_balance
 
@@ -172,8 +184,7 @@ leeftijd:           {age}
 """)
 
     input("Druk op Enter om terug te gaan naar het hoofdmenu.")
-    print()
-    print()
+    blank_lines(2)
 
 
 # ==============================
@@ -254,14 +265,12 @@ Huidig saldo: € {playing_balance:.2f}
                                 time.sleep(1)
                                 print()
                                 print("Het bedrag is succesvol gestort.")
-                                print()
-                                print()
+                                blank_lines(2)
                                 time.sleep(1)
                                 break
                             elif amount == 0:
                                 print("U keert terug naar het Saldo menu")
-                                print()
-                                print()
+                                blank_lines(2)
                                 time.sleep(1)
                                 break
                             else:
@@ -272,8 +281,7 @@ Huidig saldo: € {playing_balance:.2f}
                 elif choice == 2:
                     if playing_balance <= 0:
                         print("U heeft onvoldoende saldo voor deze opname.")
-                        print()
-                        print()
+                        blank_lines(2)
                     else:
                         while True:
                             try:
@@ -291,15 +299,13 @@ Huidig saldo: € {playing_balance:.2f}
                                     time.sleep(1)
                                     print()
                                     print("Het bedrag is succesvol opgenomen.")
-                                    print()
-                                    print()
+                                    blank_lines(2)
                                     time.sleep(1)
                                     break
                                 elif amount == 0:
                                     print()
                                     print("U keert terug naar het saldo-overzicht.")
-                                    print()
-                                    print()
+                                    blank_lines(2)
                                     time.sleep(1)
                                     break
                                 else:
@@ -312,9 +318,18 @@ Huidig saldo: € {playing_balance:.2f}
                     if trigger == "insufficient_starting_balance" and playing_balance < 0:
                         playing_balance += fixed_costs
                         print("De vaste kosten zijn teruggestort.")
-                        print()
-                        print()
+                        blank_lines(2)
                         return playing_balance, "end_program"
+                    elif trigger:
+                        print(f"""U keert terug naar de {trigger}.
+
+
+{CASINO_NAME} - {trigger.capitalize()}
+{SEPARATOR}
+Welkom terug bij de {trigger}.
+""")
+                        return playing_balance, "continue"
+
                     else:
                         print()
                         return playing_balance, "continue"
@@ -354,8 +369,7 @@ Saldo:               €{playing_balance:.2f}
 U heeft {balance_status_text} budget voor toegang tot het casino.
 """)
     input("Druk op Enter om door te gaan naar het hoofdmenu.")
-    print()
-    print()
+    blank_lines(2)
 
 
 def main_menu(playing_balance, first_name, surname, gender, birth_date, age):
@@ -383,8 +397,7 @@ def main_menu(playing_balance, first_name, surname, gender, birth_date, age):
 {SEPARATOR}""")
         try:
             choice = int(input("Kies een optie: "))
-            print()
-            print()
+            blank_lines(2)
             if 0 <= choice <= 3:
                 if choice == 1:
                     if playing_balance <= 0:
@@ -392,7 +405,6 @@ def main_menu(playing_balance, first_name, surname, gender, birth_date, age):
                         time.sleep(1)
                         playing_balance, _ = show_balance(playing_balance)
                     else:
-                        time.sleep(1)
                         playing_balance = game_selection.choose_game(playing_balance)
                 elif choice == 2:
                     time.sleep(1)

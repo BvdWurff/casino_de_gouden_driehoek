@@ -2,10 +2,11 @@
 # nog geen try/except-validatie toegevoegd. Omdat dobbelen wel in game_selection
 # is opgenomen, laat ik het spel in het project staan.
 
-import time
-import random
+import utils
 
-INVALID_ANSWER = "Ongeldige invoer. Probeer het opnieuw."
+SEPARATOR = '-' * 50
+CASINO_NAME = "Casino de Gouden Driehoek"
+INVALID_INPUT = "\nOngeldige invoer. Probeer het opnieuw.\n"
 
 def play(playing_balance):
     print()
