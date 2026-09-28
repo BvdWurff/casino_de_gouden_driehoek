@@ -2,11 +2,14 @@
 # nog geen try/except-validatie toegevoegd. Omdat dobbelen wel in game_selection
 # is opgenomen, laat ik het spel in het project staan.
 
-import utils
+import random
+import time
+from utils import format_currency
 
 SEPARATOR = '-' * 50
 CASINO_NAME = "Casino de Gouden Driehoek"
 INVALID_INPUT = "\nOngeldige invoer. Probeer het opnieuw.\n"
+
 
 def play(playing_balance):
     print()
@@ -17,7 +20,7 @@ def play(playing_balance):
     print("Eindigt u op 4 of 5? Dan wint u en ontvangt u uw inzet als winst.")
     print("Komt het totaal boven de 5? Dan verliest u uw inzet.")
     print()
-    stake = float(input(f"Uw saldo is €{playing_balance:.2f}. Hoeveel wilt u inzetten? €"))
+    stake = float(input(f"Uw saldo is {format_currency(playing_balance)}. Hoeveel wilt u inzetten? €"))
     while stake > playing_balance or stake <= 0:
         if stake <= 0:
             print("De inzet moet hoger zijn dan €0.")
@@ -26,7 +29,7 @@ def play(playing_balance):
             print("Uw saldo is niet toereikend voor deze inzet.")
 
         print()
-        stake = float(input(f"Uw saldo is €{playing_balance:.2f}. Hoeveel wilt u inzetten? €"))
+        stake = float(input(f"Uw saldo is {format_currency(playing_balance)}. Hoeveel wilt u inzetten? €"))
     print()
     print("Uw inzet is geaccepteerd. Het spel kan beginnen. Veel geluk!")
     print()
@@ -44,14 +47,14 @@ def play(playing_balance):
 
         if choice == "stoppen":
             print()
-            print(f"U verlaat het dobbelspel met een saldo van €{playing_balance:.2f}. Bedankt voor het spelen!")
+            print(f"U verlaat het dobbelspel met een saldo van {format_currency(playing_balance)}. Bedankt voor het spelen!")
             print()
             return playing_balance
 
         elif choice == "inzet":
             print()
-            print(f"Uw saldo is €{playing_balance:.2f}")
-            stake = float(input(f"Uw huidige inzet is €{stake:.2f}. Hoeveel wilt u inzetten? €"))
+            print(f"Uw saldo is {format_currency(playing_balance)}")
+            stake = float(input(f"Uw huidige inzet is {format_currency(stake)}. Hoeveel wilt u inzetten? €"))
 
             while stake > playing_balance or stake <= 0:
                 if stake <= 0:
@@ -60,7 +63,7 @@ def play(playing_balance):
                 else:
                     print("Uw saldo is niet toereikend voor deze inzet. Pas de inzet aan.")
                 print()
-                stake = float(input(f"Uw saldo is €{playing_balance:.2f}. Hoeveel wilt u inzetten? €"))
+                stake = float(input(f"Uw saldo is {format_currency(playing_balance)}. Hoeveel wilt u inzetten? €"))
 
             print("Uw inzet is aangepast.")
             print()
@@ -73,19 +76,19 @@ def play(playing_balance):
                 if answer == "nee":
                     print()
                     print(
-                        f"U verlaat het dobbelspel met een saldo van €{playing_balance:.2f}. Bedankt voor het spelen!")
+                        f"U verlaat het dobbelspel met een saldo van {format_currency(playing_balance)}. Bedankt voor het spelen!")
                     print()
                     return playing_balance
 
                 while True:
                     try:
-                        playing_balance = float(input(f"Voer een nieuw saldo in van minimaal €{stake:.2f}: €"))
+                        playing_balance = float(input(f"Voer een nieuw saldo in van minimaal {format_currency(stake)}: €"))
                         if playing_balance > 0:
                             break
                         else:
-                            print(INVALID_ANSWER)
+                            print(INVALID_INPUT)
                     except ValueError:
-                        print(INVALID_ANSWER)
+                        print(INVALID_INPUT)
                 print()
                 continue
 
@@ -106,12 +109,12 @@ def play(playing_balance):
 
             if roll in (4, 5):
                 playing_balance += stake
-                print(f"Gefeliciteerd! U wint €{stake:.2f}. Uw nieuwe saldo is €{playing_balance:.2f}.")
+                print(f"Gefeliciteerd! U wint {format_currency(stake)}. Uw nieuwe saldo is {format_currency(playing_balance)}.")
                 print()
                 print("Wilt u nog een ronde spelen?")
 
             else:
                 playing_balance -= stake
-                print(f"Helaas, u verliest €{stake:.2f}. Uw nieuwe saldo is €{playing_balance:.2f}.")
+                print(f"Helaas, u verliest {format_currency(stake)}. Uw nieuwe saldo is {format_currency(playing_balance)}.")
                 print()
                 print("Wilt u nog een ronde spelen?")

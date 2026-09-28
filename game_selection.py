@@ -1,5 +1,5 @@
 from games import roulette, dobbelen, fruitmachine
-import utils
+from utils import blank_lines
 
 SEPARATOR = '-' * 50
 CASINO_NAME = "Casino de Gouden Driehoek"
@@ -14,9 +14,7 @@ AVAILABLE_GAMES = {
 def choose_game(playing_balance):
     while True:
         print(f"""{CASINO_NAME} - Spellen
-{SEPARATOR}
-Beschikbare spellen:
-""")
+{SEPARATOR}""")
         for number, game in AVAILABLE_GAMES.items():
             print(f"{number}. {game[0]}")
         print(f"""
@@ -24,7 +22,7 @@ Beschikbare spellen:
 {SEPARATOR}""")
         try:
             choice = int(input("Kies een optie: "))
-            print()
+            blank_lines(2)
 
             if choice == 0:
                 return playing_balance
@@ -33,6 +31,7 @@ Beschikbare spellen:
                 game_name, game_module = AVAILABLE_GAMES[choice]
                 playing_balance, action = game_module.play(playing_balance)
                 if action == "main_menu":
+                    blank_lines(2)
                     return playing_balance
             else:
                 print(INVALID_INPUT)
