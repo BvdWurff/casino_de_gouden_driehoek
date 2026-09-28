@@ -1,73 +1,216 @@
 import main
 from utils import blank_lines
 from utils import format_currency
-import time
+from utils import clear_terminal
 import random
+import time
 
-SEPARATOR = '-' * 50
+
+# ==============================
+# CONFIGURATION
+# ==============================
+
+SEPARATOR = "-" * 50
 CASINO_NAME = "Casino de Gouden Driehoek"
 INVALID_INPUT = "\nOngeldige invoer. Probeer het opnieuw.\n"
 
 
-def stake_to_high(playing_balance):
+# ==============================
+# MENUS AND USER INPUT
+# ==============================
+
+def show_welcome_message():
+    """
+    Displays the roulette game instructions.
+    """
+    clear_terminal()
+
+    print(f"""
+{CASINO_NAME} - Speluitleg
+{SEPARATOR}
+Welkom aan de roulettetafel.
+
+Het doel van roulette is om te voorspellen waar het balletje zal landen.
+Kies waarop u wilt inzetten en bepaal vervolgens uw inzet.
+Het balletje kan op een vakje met één van de getallen van 0 tot en met 36 landen.
+Ieder vakje heeft ook zijn eigen kleur. Dit kan rood, zwart of groen zijn.
+In het keuze-overzicht ziet u per optie hoeveel winst u kunt behalen.
+{SEPARATOR}
+""")
+    input("Druk op Enter om verder te gaan.")
+    time.sleep(0.5)
+
+
+def get_quit_action():
+    """
+    Displays the stop menu and determines how the player wants to continue.
+
+    Returns:
+        str: The action to perform after leaving the stop menu.
+    """
+    clear_terminal()
+
+    print(f"""
+U heeft gekozen om het spel te stoppen.
+{SEPARATOR}
+1. Toch verder spelen
+2. Inzet aanpassen en verder spelen
+3. Een ander spel kiezen
+0. Terug naar het hoofdmenu
+{SEPARATOR}""")
+
+    while True:
+        try:
+            menu_choice = int(input("Kies een optie: "))
+        except ValueError:
+            print(INVALID_INPUT)
+            continue
+
+        if menu_choice not in range(0, 4):
+            print(INVALID_INPUT)
+            continue
+
+        if menu_choice == 1:
+            blank_lines(2)
+            action = "continue"
+
+        elif menu_choice == 2:
+            blank_lines(2)
+            action = "change_stake"
+
+        elif menu_choice == 3:
+            action = "choose_game"
+
+        else:
+            action = "main_menu"
+
+        return action
+
+
+def handle_insufficient_balance(playing_balance):
+    """
+    Handles a stake that exceeds the current playing balance.
+
+    Args:
+        playing_balance (int or float): The current playing balance.
+
+    Returns:
+        tuple: The updated playing balance and the action to perform.
+    """
     while True:
         print(f"""Uw saldo is ontoereikend voor deze inzet.
 {SEPARATOR}
-Keuze opties: 
+Keuzeopties:
 
 1. Inzet wijzigen
 2. Saldo wijzigen
 0. Stoppen
 {SEPARATOR}""")
+
         try:
-            choice = int(input(f"Kies een optie: "))
-            if 0 <= choice <= 2:
-                if choice == 1:
-                    print()
-                    action = "change_stake"
-                elif choice == 2:
-                    blank_lines(2)
-                    playing_balance, _ = main.show_balance(playing_balance, trigger="roulettetafel")
-                    action = "continue"
-                else:
-                    action = quit_action()
-                return playing_balance, action
-            else:
-                print(INVALID_INPUT)
-                continue
+            menu_choice = int(input("Kies een optie: "))
         except ValueError:
             print(INVALID_INPUT)
+            continue
 
+        if not 0 <= menu_choice <= 2:
+            print(INVALID_INPUT)
+            continue
 
-def new_stake(playing_balance):
-    while True:
-        try:
+        if menu_choice == 1:
+            print()
+            action = "change_stake"
+
+        elif menu_choice == 2:
+            blank_lines(2)
+            playing_balance, _ = main.manage_balance(playing_balance, trigger="roulettetafel")
             action = "continue"
-            print(f"Uw huidige saldo bedraagt {format_currency(playing_balance)}.")
-            stake = float(input(f"Hoeveel wilt u inzetten? € "))
-            if stake > playing_balance or stake <= 0:
-                if stake <= 0:
-                    print()
-                    print("De inzet moet hoger zijn dan €0.")
-                    print()
-                    continue
-                else:
-                    blank_lines(2)
-                    playing_balance, action = stake_to_high(playing_balance)
-                    if action == "change_stake":
-                        continue
-            else:
-                print()
-                input("Uw inzet is geaccepteerd. Druk op enter om verder te gaan.")
-                blank_lines(2)
-            return stake, playing_balance, action
+
+        else:
+            action = get_quit_action()
+
+        return playing_balance, action
+
+
+def get_stake(playing_balance):
+    """
+    Requests and validates the player's stake.
+
+    Args:
+        playing_balance (int or float): The current playing balance.
+
+    Returns:
+        tuple: The stake, updated playing balance and action to perform.
+    """
+    while True:
+        clear_terminal()
+
+        print(f"""
+{CASINO_NAME} - Inzetten
+{SEPARATOR}
+Uw huidige saldo bedraagt {format_currency(playing_balance)}.""")
+
+        try:
+            stake = float(input("Hoeveel wilt u inzetten? € "))
         except ValueError:
             print(INVALID_INPUT)
+            continue
+
+        if stake <= 0:
+            print()
+            print("De inzet moet hoger zijn dan €0.")
+            print()
+            continue
+
+        if stake > playing_balance:
+            blank_lines(2)
+            playing_balance, action = handle_insufficient_balance(playing_balance)
+
+            if action in ("continue", "change_stake"):
+                continue
+
+            if action in ("choose_game", "main_menu"):
+                return stake, playing_balance, action
+
+        print()
+        input("Uw inzet is geaccepteerd. Druk op Enter om verder te gaan.")
+        blank_lines(2)
+
+        return stake, playing_balance, "continue"
 
 
-def get_gamble_choice():
+def select_number():
+    """
+    Requests and validates a roulette number between 0 and 36.
+
+    Returns:
+        int: The selected roulette number.
+    """
     while True:
-        print(f"""{CASINO_NAME} - Inzetmogelijkheden
+        try:
+            selected_number = int(input("Op welk nummer wilt u inzetten? (0 t/m 36) "))
+        except ValueError:
+            print(INVALID_INPUT)
+            continue
+
+        if 0 <= selected_number <= 36:
+            return selected_number
+
+        print(INVALID_INPUT)
+
+
+def get_bet_choice():
+    """
+    Displays the available roulette bets and requests the player's choice.
+
+    Returns:
+        tuple: The selected bet, optional roulette number and action to perform.
+    """
+    while True:
+        clear_terminal()
+
+        print(f"""
+{CASINO_NAME} - Inzetmogelijkheden
 {SEPARATOR}
 1. Rood   - winst: 1x inzet
 2. Zwart  - winst: 1x inzet
@@ -80,101 +223,233 @@ def get_gamble_choice():
 {SEPARATOR}""")
 
         try:
-            action = "continue"
-            choice = int(input("Kies een optie: "))
-
-            if choice in range(0, 7):
-                number =  None
-
-                if choice == 6:
-                    print()
-                    number = select_number()
-
-                elif choice == 0:
-                    blank_lines(2)
-                    action = quit_action()
-                    if action == "continue":
-                        continue
-                else:
-                    blank_lines(2)
-                return choice, number, action
-            else:
-                print(INVALID_INPUT)
+            bet_choice = int(input("Kies een optie: "))
         except ValueError:
             print(INVALID_INPUT)
+            continue
 
-
-def show_welcome_message():
-    print(f"""{CASINO_NAME} - Speluitleg
-{SEPARATOR}
-Welkom aan de roulettetafel.
-
-Het doel van roulette is om te voorspellen waar het balletje zal landen.
-Kies waarop u wilt inzetten en bepaal vervolgens uw inzet.
-Het balletje kan op een vakje met één van de getallen van 0 tot en met 36 landen.
-Ieder vakje heeft ook zijn eigen kleur. Dit kan rood, zwart of groen zijn.
-In het keuze-overzicht ziet u per optie hoeveel winst u kunt behalen.
-{SEPARATOR}
-""")
-
-
-def select_number():
-    while True:
-        try:
-            number = int(input("Op welk nummer wilt u inzetten? (0 t/m 36) "))
-            if 0 <= number <= 36:
-                break
-            else:
-                print(INVALID_INPUT)
-        except ValueError:
+        if bet_choice not in range(0, 7):
             print(INVALID_INPUT)
-    return number
+            continue
 
+        action = "continue"
+        selected_number = None
 
-def quit_action():
-    print(f"""U heeft gekozen om het spel te stoppen.
-{SEPARATOR}
-1. Toch verder spelen
-2. Inzet aanpassen en verder spelen
-3. Een ander spel kiezen
-0. Terug naar het hoofdmenu
-{SEPARATOR}""")
-    while True:    
-        try:
-            choice = int(input(f"Kies een optie: "))
-            if choice in range(0, 4):
-                if choice == 1:
-                    blank_lines(2)
-                    action = "continue"
-                elif choice == 2:
-                    blank_lines(2)
-                    action = "change_stake"
-                elif choice == 3:
-                    action = "choose_game"
-                else:
-                    action = "main_menu"
-                return action
-            else:
-                print(INVALID_INPUT)
+        if bet_choice == 6:
+            print()
+            selected_number = select_number()
+
+        elif bet_choice == 0:
+            blank_lines(2)
+            action = get_quit_action()
+
+            # The player still needs to select a valid bet when continuing.
+            if action == "continue":
                 continue
+
+        blank_lines(2)
+
+        return bet_choice, selected_number, action
+
+
+def get_bet_choice_text(bet_choice):
+    """
+    Converts the internal roulette bet choice to its Dutch display text.
+
+    Args:
+        bet_choice (int): The selected roulette bet.
+
+    Returns:
+        str: The Dutch display text for the selected bet.
+    """
+    match bet_choice:
+        case 1:
+            choice_text = "Rood"
+
+        case 2:
+            choice_text = "Zwart"
+
+        case 3:
+            choice_text = "Groen"
+
+        case 4:
+            choice_text = "Even"
+
+        case 5:
+            choice_text = "Oneven"
+
+        case 6:
+            choice_text = "Nummer"
+
+        case _:
+            choice_text = "Onbekend"
+
+    return choice_text
+
+
+def confirm_bet(playing_balance, stake, selected_number, bet_choice):
+    """
+    Displays the current bet and allows the player to confirm or modify it.
+
+    Args:
+        playing_balance (int or float): The current playing balance.
+        stake (int or float): The current stake.
+        selected_number (int or None): The selected roulette number.
+        bet_choice (int): The selected roulette bet.
+
+    Returns:
+        tuple: The action, stake, selected number, bet choice and playing balance.
+    """
+    while True:
+        clear_terminal()
+
+        choice_text = get_bet_choice_text(bet_choice)
+
+        print(f"""
+Uw huidige inzet is:
+{SEPARATOR}
+Inzet:      {format_currency(stake)}
+Keuze:      {choice_text}""")
+
+        if bet_choice == 6:
+            print(f"Nummer:     {selected_number}")
+
+        print(SEPARATOR)
+
+        print(f"""
+Wat wilt u doen?
+{SEPARATOR}
+1. Spelen met huidige inzet
+2. Keuze aanpassen
+3. Inzet aanpassen
+4. Keuze en inzet aanpassen
+
+0. Stoppen
+{SEPARATOR}""")
+
+        try:
+            confirmation_choice = int(input("Kies een optie: "))
         except ValueError:
             print(INVALID_INPUT)
+            time.sleep(1)
+            continue
 
+        if confirmation_choice not in range(0, 5):
+            print(INVALID_INPUT)
+            time.sleep(1)
+            continue
+
+        if confirmation_choice == 0:
+            blank_lines(2)
+            action = get_quit_action()
+
+            if action == "continue":
+                continue
+
+            if action == "change_stake":
+                stake, playing_balance, action = get_stake(playing_balance)
+
+                if action == "continue":
+                    continue
+
+            return action, stake, selected_number, bet_choice, playing_balance
+
+        if confirmation_choice == 1:
+            blank_lines(2)
+
+            return "continue", stake, selected_number, bet_choice, playing_balance
+
+        if confirmation_choice == 2:
+            previous_bet_choice = bet_choice
+            previous_selected_number = selected_number
+
+            blank_lines(2)
+
+            bet_choice, selected_number, action = get_bet_choice()
+
+            if action == "continue":
+                continue
+
+            if action == "change_stake":
+                # Keep the previous bet when only the stake is changed.
+                bet_choice = previous_bet_choice
+                selected_number = previous_selected_number
+                stake, playing_balance, action = get_stake(playing_balance)
+
+                if action == "continue":
+                    continue
+
+            return action, stake, selected_number, bet_choice, playing_balance
+
+        if confirmation_choice == 3:
+            print()
+
+            stake, playing_balance, action = get_stake(playing_balance)
+
+            if action == "continue":
+                continue
+
+            return action, stake, selected_number, bet_choice, playing_balance
+
+        previous_bet_choice = bet_choice
+        previous_selected_number = selected_number
+
+        selected_number = None
+        blank_lines(2)
+
+        stake, playing_balance, action = get_stake(playing_balance)
+
+        if action in ("choose_game", "main_menu"):
+            return action, stake, selected_number, bet_choice, playing_balance
+
+        bet_choice, selected_number, action = get_bet_choice()
+
+        if action == "continue":
+            continue
+
+        if action == "change_stake":
+            # Keep the previous bet when no new valid bet has been selected.
+            bet_choice = previous_bet_choice
+            selected_number = previous_selected_number
+            stake, playing_balance, action = get_stake(playing_balance)
+
+            if action == "continue":
+                continue
+
+        return action, stake, selected_number, bet_choice, playing_balance
+
+
+# ==============================
+# ROULETTE GAME LOGIC
+# ==============================
 
 def determine_color_and_parity(spin_result):
+    """
+    Determines the color and parity of a roulette result.
+
+    Args:
+        spin_result (int): The roulette number that was rolled.
+
+    Returns:
+        tuple: The color and parity of the roulette result.
+    """
     if spin_result == 0:
-        color = 'groen'
-        parity = ''
+        color = "groen"
+        parity = ""
+
     elif spin_result <= 18:
         if spin_result % 2 == 0:
-            color = 'zwart'
-            parity = 'even'
+            color = "zwart"
+            parity = "even"
+
         else:
-            color = 'rood'
-            parity = 'oneven'
+            color = "rood"
+            parity = "oneven"
+
     elif spin_result % 2 == 0:
         color = "rood"
         parity = "even"
+
     else:
         color = "zwart"
         parity = "oneven"
@@ -182,7 +457,82 @@ def determine_color_and_parity(spin_result):
     return color, parity
 
 
+def determine_win(playing_balance, bet_choice, color, parity, selected_number, spin_result, stake):
+    """
+    Determines whether the roulette bet has won and updates the playing balance.
+
+    Args:
+        playing_balance (int or float): The current playing balance.
+        bet_choice (int): The selected roulette bet.
+        color (str): The color of the roulette result.
+        parity (str): The parity of the roulette result.
+        selected_number (int or None): The selected roulette number.
+        spin_result (int): The roulette number that was rolled.
+        stake (int or float): The amount that was wagered.
+
+    Returns:
+        int or float: The updated playing balance.
+    """
+    print(SEPARATOR)
+    win = False
+    multiplier = 2
+
+    if bet_choice == 1 and color == "rood":
+        win = True
+
+    elif bet_choice == 2 and color == "zwart":
+        win = True
+
+    elif bet_choice == 3 and color == "groen":
+        win = True
+        multiplier = 36
+
+    elif bet_choice == 4 and parity == "even":
+        win = True
+
+    elif bet_choice == 5 and parity == "oneven":
+        win = True
+
+    elif bet_choice == 6 and selected_number == spin_result:
+        win = True
+        multiplier = 36
+
+    if win:
+        playing_balance += stake * multiplier
+        playing_balance = round(playing_balance, 2)
+
+        gain = stake * multiplier - stake
+        gain = round(gain, 2)
+
+        print(f"Gefeliciteerd, u wint {format_currency(gain)}!")
+
+    else:
+        print("Helaas, u verliest uw inzet.")
+
+    print(f"Uw nieuwe saldo is {format_currency(playing_balance)}.")
+    print()
+
+    input("Druk op Enter om verder te gaan.")
+    blank_lines(2)
+
+    return playing_balance
+
+
+# ==============================
+# OUTPUT
+# ==============================
+
 def show_spin_result(spin_result, color):
+    """
+    Displays the roulette spin and its result.
+
+    Args:
+        spin_result (int): The roulette number that was rolled.
+        color (str): The color of the roulette result.
+    """
+    clear_terminal()
+
+    blank_lines(2)
     print("De croupier rolt het balletje. Veel geluk!")
     time.sleep(1)
     print("...")
@@ -192,177 +542,72 @@ def show_spin_result(spin_result, color):
     print("...")
     time.sleep(1)
     print(f"Het balletje is geland op {spin_result} {color}.")
-    print(SEPARATOR)
+    print()
     time.sleep(1)
 
 
-def determine_win(playing_balance, choice, color, parity, number, spin_result, stake):
-    win = False
-    multiplier = 2
-    if choice == 1 and color == "rood":
-        win = True
-    elif choice == 2 and color == "zwart":
-        win = True
-    elif choice == 3 and color == "groen":
-        win = True
-        multiplier = 36
-    elif choice == 4 and parity == "even":
-        win = True
-    elif choice == 5 and parity == "oneven":
-        win = True
-    elif choice == 6 and number == spin_result:
-        win = True
-        multiplier = 36
-
-    if win:
-        playing_balance += (stake * multiplier)
-        gain = stake * multiplier - stake
-        print(f"Gefeliciteerd, u wint {format_currency(gain)}!")
-    else:
-        print(f"Helaas, u verliest uw inzet.")
-    print()
-    print(f"Uw nieuwe saldo is {format_currency(playing_balance)}.")
-    print()
-    input("Druk op Enter om verder te gaan.")
-    blank_lines(2)
-
-    return playing_balance
-
-def choice_to_text(choice):
-    match choice:
-        case 1:
-            choice_text = "Rood"
-        case 2:
-            choice_text = "Zwart"
-        case 3:
-            choice_text = "Groen"
-        case 4:
-            choice_text = "Even"
-        case 5:
-            choice_text = "Oneven"
-        case 6:
-            choice_text = "Nummer"
-        case _:
-            choice_text = "Onbekend"
-
-    return choice_text
-
-
-def confirm_bet(playing_balance, stake, number, choice):
-    action = None
-    while True:
-        choice_text = choice_to_text(choice)
-        print(f"""Uw huidige inzet is:
-{SEPARATOR}
-Inzet:      {format_currency(stake)}    
-Keuze:      {choice_text}""")
-        if choice == 6:
-            print(f"Nummer:     {number}")
-        print(SEPARATOR)
-        print(f"""
-Wat wilt u doen?
-{SEPARATOR}
-1. Spelen met huidige inzet en keuze
-2. Keuze aanpassen
-3. Inzet aanpassen
-4. Keuze en inzet aanpassen
-
-0. stoppen
-{SEPARATOR}""")
-        try:
-            round_choice = int(input("Kies een optie: "))
-            if round_choice in range(0, 5):
-                if round_choice == 0:
-                    blank_lines(2)
-                    action = quit_action()
-                    if action == "continue":
-                        continue
-                    elif action == "change_stake":
-                        stake, playing_balance, action = new_stake(playing_balance)
-                        if action == "continue":
-                            continue
-                elif round_choice == 1:
-                    blank_lines(2)
-                    action = "continue"
-                elif round_choice == 2:
-                    number = None
-                    blank_lines(2)
-                    choice, number, action = get_gamble_choice()
-                    if action == "continue":
-                        continue
-                    elif action == "change_stake":
-                        stake, playing_balance, action = new_stake(playing_balance)
-                        choice, number, action = get_gamble_choice()
-                        continue
-                elif round_choice == 3:
-                    print()
-                    stake, playing_balance, action = new_stake(playing_balance)
-                    if action in ("continue", "change_stake"):
-                        continue
-                else:
-                    number = None
-                    blank_lines(2)
-                    stake, playing_balance, action = new_stake(playing_balance)
-                    if action in ("choose_game", "main_menu"):
-                        return action, stake, number, choice, playing_balance
-                    choice, number, action = get_gamble_choice()
-                    if action == "continue":
-                        continue
-                    elif action == "change_stake":
-                        stake, playing_balance, action = new_stake(playing_balance)
-                        choice, number, action = get_gamble_choice()
-                        continue
-            else:
-                print(INVALID_INPUT)
-                time.sleep(1)
-                continue
-        except ValueError:
-            print(INVALID_INPUT)
-            time.sleep(1)
-            continue
-        return action, stake, number, choice, playing_balance
+# ==============================
+# PROGRAM FLOW
+# ==============================
 
 def play(playing_balance):
-    show_welcome_message()
-    choice = None
-    number = None
+    """
+    Controls the roulette game flow.
 
+    Args:
+        playing_balance (int or float): The current playing balance.
+
+    Returns:
+        tuple: The updated playing balance and the action to perform.
+    """
+    show_welcome_message()
+
+    # Determine the initial stake and roulette bet.
     while True:
-        stake, playing_balance, action = new_stake(playing_balance)
-        if action == "continue":
-            choice, number, action = get_gamble_choice()
+        stake, playing_balance, action = get_stake(playing_balance)
+
+        if action in ("choose_game", "main_menu"):
+            return playing_balance, action
+
+        bet_choice, selected_number, action = get_bet_choice()
+
         if action == "change_stake":
             continue
-        if action in ("continue", "choose_game", "main_menu"):
+
+        if action in ("choose_game", "main_menu"):
+            return playing_balance, action
+
+        break
+
+    # Continue playing roulette rounds until another destination is selected.
+    while True:
+        action, stake, selected_number, bet_choice, playing_balance = confirm_bet(playing_balance, stake, selected_number, bet_choice)
+
+        if action in ("choose_game", "main_menu"):
             break
 
-    if action == "continue":
-        while True:
-            action, stake, number, choice, playing_balance = confirm_bet(playing_balance, stake, number, choice)
+        if playing_balance < stake:
+            playing_balance, action = handle_insufficient_balance(playing_balance)
 
             if action in ("choose_game", "main_menu"):
                 break
 
-            if playing_balance < stake:
-                playing_balance, action = stake_to_high(playing_balance)
-                if action == "change_stake":
-                    stake, playing_balance, action  = new_stake(playing_balance)
-                    continue
-                elif action == "continue":
-                    continue
+            if action == "change_stake":
+                stake, playing_balance, action = get_stake(playing_balance)
 
+                if action in ("choose_game", "main_menu"):
+                    break
 
+            # Any balance or stake change must be confirmed before spinning.
+            continue
 
-            playing_balance -= stake
-            spin_result = random.randint(0, 36)
-            color, parity = determine_color_and_parity(spin_result)
-            show_spin_result(spin_result, color)
-            playing_balance = determine_win(playing_balance, choice, color, parity, number, spin_result, stake)
-            if action == 'continue':
-                continue
-            elif action == 'change_stake':
-                stake, playing_balance, action  = new_stake(playing_balance)
-                continue
-            else:
-                break
+        playing_balance = round(playing_balance - stake, 2)
+
+        spin_result = random.randint(0, 36)
+        color, parity = determine_color_and_parity(spin_result)
+
+        show_spin_result(spin_result, color)
+
+        playing_balance = determine_win(playing_balance, bet_choice, color, parity, selected_number, spin_result, stake)
+
     return playing_balance, action

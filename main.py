@@ -1,6 +1,7 @@
 import game_selection
 from utils import blank_lines
 from utils import format_currency
+from utils import clear_terminal
 import datetime
 import time
 
@@ -27,10 +28,18 @@ VAT_RATE = 21.0
 # ==============================
 
 def show_welcome_message():
+    """
+    Displays the casino welcome message.
+    """
+    clear_terminal()
+
     print(f"""
 {CASINO_NAME} - Startpagina
 {SEPARATOR}
-Welkom bij {CASINO_NAME}.""")
+Welkom bij {CASINO_NAME}.
+
+Voor de beste weergave wordt aangeraden het programma in een terminal uit te voeren 
+of in PyCharm “Emulate terminal in output console” in te schakelen.""")
 
 
 def get_user_input():
@@ -38,80 +47,94 @@ def get_user_input():
     Collects and validates the guest's registration information.
 
     Returns:
-        tuple: The guest's first name, surname, birth date, gender
+        tuple: The guest's first name, surname, birthdate, gender
         and starting balance.
     """
+    birth_date = None
+    starting_balance = None
+
     print()
-    test = input("Is dit een test run? (Ja/Nee) ").lower()
-    if test == 'ja':
+    test_run = input("Is dit een test? (Ja/Nee) ").lower()
+
+    if test_run == "ja":
         blank_lines(2)
-        first_name = 'Bart'
-        surname = 'van der Wurff'
+        first_name = "Bart"
+        surname = "van der Wurff"
         birth_date = datetime.datetime(1985, 8, 26)
-        gender = 'man'
+        gender = "man"
         starting_balance = 100.00
 
     else:
+        clear_terminal()
+
         print(f"""
 Vul onderstaande vragen in om toegang te krijgen.
 {SEPARATOR}
 """)
+
         while True:
             first_name = input("Wat is uw voornaam? ").title()
 
             if first_name.isalpha():
                 break
-            else:
-                print(INVALID_INPUT)
+
+            print(INVALID_INPUT)
 
         while True:
             surname_prefix = input("Wat zijn uw tussenvoegsels? (druk op Enter indien niet van toepassing) ")
 
             if not surname_prefix or surname_prefix.replace(" ", "").isalpha():
                 break
-            else:
-                print(INVALID_INPUT)
+
+            print(INVALID_INPUT)
 
         while True:
             surname = input("Wat is uw achternaam? ").title()
 
             if surname.isalpha():
                 break
-            else:
-                print(INVALID_INPUT)
+
+            print(INVALID_INPUT)
 
         if surname_prefix:
             surname = surname_prefix + " " + surname
 
         while True:
+            date_of_birth = input("Wat is uw geboortedatum? (dd-mm-jjjj) ")
+
             try:
-                date_of_birth = input("Wat is uw geboortedatum? (dd-mm-jjjj) ")
                 birth_date = datetime.datetime.strptime(date_of_birth, "%d-%m-%Y")
-                current_date = datetime.datetime.now()
-                if current_date < birth_date:
-                    print(INVALID_INPUT)
-                else:
-                    break
             except ValueError:
                 print(INVALID_INPUT)
+                continue
+
+            current_date = datetime.datetime.now()
+
+            if current_date < birth_date:
+                print(INVALID_INPUT)
+                continue
+
+            break
 
         while True:
             gender = input("Wat is uw geslacht? (Man/Vrouw/Anders) ").lower()
 
             if gender:
                 break
-            else:
-                print(INVALID_INPUT)
+
+            print(INVALID_INPUT)
 
         while True:
             try:
-                starting_balance = float(input("Wat is uw speelbudget? € "))
-                if starting_balance > 0:
-                    break
-                else:
-                    print(INVALID_INPUT)
+                starting_balance = round(float(input("Wat is uw speelbudget? € ")), 2)
             except ValueError:
                 print(INVALID_INPUT)
+                continue
+
+            if starting_balance > 0:
+                break
+
+            print(INVALID_INPUT)
 
         print(SEPARATOR)
         print()
@@ -124,19 +147,20 @@ def check_age(birth_date):
     Checks whether the guest meets the minimum age requirement.
 
     Args:
-        birth_date (datetime.datetime): The guest's date of birth.
+        birth_date (datetime.datetime): The guest's birthdate.
 
     Returns:
-        datetime.datetime: The birth date if the age requirement is met.
+        datetime.datetime: The birthdate if the age requirement is met.
     """
     current_date = datetime.datetime.now()
     minimum_age_year = birth_date.year + MIN_AGE
 
-    # For a birth date on February 29, the minimum age birthday may not exist,
+    # For a birthdate on February 29, the minimum age birthday may not exist,
     # because the corresponding year may not be a leap year.
-    # In that case, use February 28 as the minimum age birthday
+    # In that case, use February 28 as the minimum age birthday.
     if birth_date.day == 29 and birth_date.month == 2:
         minimum_age_birthday = datetime.datetime(minimum_age_year, 2, 28)
+
     else:
         minimum_age_birthday = birth_date.replace(year=minimum_age_year)
 
@@ -150,21 +174,44 @@ U bent van harte welkom vanaf {minimum_age_birthday.day}-{minimum_age_birthday.m
 {SEPARATOR}""")
 
         exit(1)
-    else:
-        return birth_date
+
+    return birth_date
 
 
 def determine_salutation(first_name, surname, gender):
+    """
+    Determines the appropriate salutation for the guest.
+
+    Args:
+        first_name (str): The guest's first name.
+        surname (str): The guest's surname.
+        gender (str): The guest's gender.
+
+    Returns:
+        str: The salutation used to address the guest.
+    """
     if gender == "man":
         salutation = f"meneer {surname}"
+
     elif gender == "vrouw":
         salutation = f"mevrouw {surname}"
+
     else:
         salutation = f"{first_name} {surname}"
+
     return salutation
 
 
 def calculate_age(birth_date):
+    """
+    Calculates the guest's current age.
+
+    Args:
+        birth_date (datetime.datetime): The guest's birthdate.
+
+    Returns:
+        int: The guest's current age.
+    """
     current_date = datetime.datetime.now()
     current_age = current_date.year - birth_date.year
 
@@ -175,7 +222,20 @@ def calculate_age(birth_date):
 
 
 def show_account(first_name, surname, gender, birth_date, age):
-    print(f"""{CASINO_NAME} - Account
+    """
+    Displays the guest's account information.
+
+    Args:
+        first_name (str): The guest's first name.
+        surname (str): The guest's surname.
+        gender (str): The guest's gender.
+        birth_date (datetime.datetime): The guest's birthdate.
+        age (int): The guest's current age.
+    """
+    clear_terminal()
+
+    print(f"""
+{CASINO_NAME} - Account
 {SEPARATOR}
 Naam:               {first_name} {surname}
 Geslacht:           {gender.capitalize()}
@@ -207,7 +267,18 @@ def calculate_costs():
 
 
 def calculate_starting_balance(starting_balance, fixed_costs):
+    """
+    Calculates the playing balance after deducting the fixed casino costs.
+
+    Args:
+        starting_balance (int or float): The guest's initial budget.
+        fixed_costs (int or float): The total fixed casino costs.
+
+    Returns:
+        int or float: The initial playing balance.
+    """
     playing_balance = starting_balance - fixed_costs
+
     return round(playing_balance, 2)
 
 
@@ -223,11 +294,11 @@ def determine_balance_status(playing_balance):
     """
     if playing_balance >= 0:
         return "sufficient", "voldoende"
-    else:
-        return "insufficient", "onvoldoende"
+
+    return "insufficient", "onvoldoende"
 
 
-def show_balance(playing_balance, fixed_costs=0.0, trigger=""):
+def manage_balance(playing_balance, fixed_costs=0.0, trigger=""):
     """
     Displays the balance menu and handles deposits and withdrawals.
 
@@ -240,7 +311,10 @@ def show_balance(playing_balance, fixed_costs=0.0, trigger=""):
         tuple: The updated playing balance and the action to perform.
     """
     while True:
-        print(f"""{CASINO_NAME} - Saldo
+        clear_terminal()
+
+        print(f"""
+{CASINO_NAME} - Saldo-overzicht
 {SEPARATOR}
 Huidig saldo: {format_currency(playing_balance)}
 
@@ -250,112 +324,145 @@ Huidig saldo: {format_currency(playing_balance)}
 {SEPARATOR}""")
 
         try:
-            choice = int(input("Kies een optie: "))
-            print()
-            if 0 <= choice <= 2:
-                if choice == 1:
-                    while True:
-                        try:
-                            amount = float(input("Hoeveel wilt u storten? € "))
-                            if amount > 0:
-                                playing_balance += amount
-                                playing_balance = round(playing_balance, 2)
-                                time.sleep(1)
-                                print()
-                                print("...")
-                                time.sleep(1)
-                                print()
-                                print("Het bedrag is succesvol gestort.")
-                                blank_lines(2)
-                                time.sleep(1)
-                                break
-                            elif amount == 0:
-                                print("U keert terug naar het Saldo menu")
-                                blank_lines(2)
-                                time.sleep(1)
-                                break
-                            else:
-                                print(INVALID_INPUT)
-                        except ValueError:
-                            print(INVALID_INPUT)
-
-                elif choice == 2:
-                    if playing_balance <= 0:
-                        print("U heeft onvoldoende saldo voor deze opname.")
-                        blank_lines(2)
-                    else:
-                        while True:
-                            try:
-                                amount = float(input("Hoeveel wilt u opnemen? € "))
-                                if amount > playing_balance:
-                                    print()
-                                    print("U heeft onvoldoende saldo voor deze opname.")
-                                    print()
-                                elif amount > 0:
-                                    playing_balance -= amount
-                                    playing_balance = round(playing_balance, 2)
-                                    time.sleep(1)
-                                    print()
-                                    print("...")
-                                    time.sleep(1)
-                                    print()
-                                    print("Het bedrag is succesvol opgenomen.")
-                                    blank_lines(2)
-                                    time.sleep(1)
-                                    break
-                                elif amount == 0:
-                                    print()
-                                    print("U keert terug naar het saldo-overzicht.")
-                                    blank_lines(2)
-                                    time.sleep(1)
-                                    break
-                                else:
-                                    print(INVALID_INPUT)
-                            except ValueError:
-                                print(INVALID_INPUT)
-
-                elif choice == 0:
-                    # Refund fixed costs when the guest leaves due to insufficient starting balance
-                    if trigger == "insufficient_starting_balance":
-                        if playing_balance < 0:
-                            playing_balance += fixed_costs
-                            print("De vaste kosten zijn teruggestort.")
-                            blank_lines(2)
-                            return playing_balance, "end_program"
-                        else:
-                            print("U heeft voldoende budget voor toegang tot het casino!")
-                            print(SEPARATOR)
-                            print()
-                            input(f"Druk op Enter om verder te gaan naar het hoofdmenu.")
-                            blank_lines(2)
-                            return playing_balance, "continue"
-                    elif trigger:
-                        print(f"U keert terug naar de {trigger}.")
-                        blank_lines(2)
-                        return playing_balance, "continue"
-
-                    else:
-                        print()
-                        return playing_balance, "continue"
-            else:
-                print(INVALID_INPUT)
+            menu_choice = int(input("Kies een optie: "))
         except ValueError:
             print(INVALID_INPUT)
             print()
             time.sleep(1)
+            continue
+
+        print()
+
+        if menu_choice not in range(0, 3):
+            print(INVALID_INPUT)
+            continue
+
+        if menu_choice == 1:
+            while True:
+                try:
+                    amount = float(input("Hoeveel wilt u storten? € "))
+                except ValueError:
+                    print(INVALID_INPUT)
+                    continue
+
+                if amount < 0:
+                    print(INVALID_INPUT)
+                    continue
+
+                if amount == 0:
+                    print("U keert terug naar het saldo-overzicht.")
+                    blank_lines(2)
+                    time.sleep(0.5)
+                    break
+
+                playing_balance += amount
+                playing_balance = round(playing_balance, 2)
+
+                time.sleep(1)
+                print()
+                print("...")
+                time.sleep(1)
+                print()
+                print("Het bedrag is succesvol gestort.")
+                blank_lines(2)
+                input("Druk op Enter om terug te gaan naar het saldo-overzicht.")
+                time.sleep(0.5)
+                break
+
+        elif menu_choice == 2:
+            if playing_balance <= 0:
+                print("U heeft onvoldoende saldo voor deze opname.")
+                blank_lines(2)
+
+            else:
+                while True:
+                    try:
+                        amount = float(input("Hoeveel wilt u opnemen? € "))
+                    except ValueError:
+                        print(INVALID_INPUT)
+                        continue
+
+                    if amount < 0:
+                        print(INVALID_INPUT)
+                        continue
+
+                    if amount == 0:
+                        print()
+                        print("U keert terug naar het saldo-overzicht.")
+                        blank_lines(2)
+                        time.sleep(1)
+                        break
+
+                    if amount > playing_balance:
+                        print()
+                        print("U heeft onvoldoende saldo voor deze opname.")
+                        print()
+                        continue
+
+                    playing_balance -= amount
+                    playing_balance = round(playing_balance, 2)
+
+                    time.sleep(1)
+                    print()
+                    print("...")
+                    time.sleep(1)
+                    print()
+                    print("Het bedrag is succesvol opgenomen.")
+                    blank_lines(2)
+                    input("Druk op Enter om terug te gaan naar het saldo-overzicht.")
+                    time.sleep(0.5)
+                    break
+
+        elif menu_choice == 0:
+            # Refund fixed costs when the guest leaves due to insufficient starting balance.
+            if trigger == "insufficient_starting_balance":
+                if playing_balance < 0:
+                    playing_balance += fixed_costs
+                    playing_balance = round(playing_balance, 2)
+                    print("De vaste kosten zijn teruggestort.")
+                    blank_lines(2)
+
+                    return playing_balance, "end_program"
+
+                print("U heeft voldoende budget voor toegang tot het casino!")
+                print(SEPARATOR)
+                print()
+                input("Druk op Enter om verder te gaan naar het hoofdmenu.")
+                time.sleep(0.5)
+                blank_lines(2)
+
+                return playing_balance, "continue"
+
+            if trigger:
+                print(f"U keert terug naar de {trigger}.")
+                blank_lines(2)
+
+                return playing_balance, "continue"
+
+            print()
+            return playing_balance, "continue"
 
 
 # ==============================
 # MENUS AND OUTPUT
 # ==============================
 
-def show_results(salutation, starting_balance, vat_amount,
-                 fixed_costs, playing_balance, balance_status_text):
+def show_results(salutation, starting_balance, vat_amount, fixed_costs, playing_balance, balance_status_text):
     """
     Displays the guest's registration and cost summary.
-    """
-    print(f"""Welkom, {salutation}!
 
+    Args:
+        salutation (str): The salutation used to address the guest.
+        starting_balance (int or float): The guest's initial budget.
+        vat_amount (int or float): The VAT amount included in the fixed costs.
+        fixed_costs (int or float): The total fixed casino costs.
+        playing_balance (int or float): The current playing balance.
+        balance_status_text (str): The Dutch display text for the balance status.
+    """
+    clear_terminal()
+
+    print(f"""
+Welkom, {salutation}!
 
 {CASINO_NAME} - Kostenoverzicht
 {SEPARATOR}
@@ -363,23 +470,25 @@ Speelbudget:          {format_currency(starting_balance)}
 
 Vaste kosten:
 - Toegangskosten:   - {format_currency(ADMISSION_PRICE)}
-- Service kosten:   - {format_currency(SERVICE_FEE)}
+- Servicekosten:    - {format_currency(SERVICE_FEE)}
 - Consumptie:       - {format_currency(MANDATORY_DRINK_PRICE)}
 - BTW ({VAT_RATE:.0f}%):        - {format_currency(vat_amount)}
 Totaal:             - {format_currency(fixed_costs)}
 
 Saldo:                {format_currency(playing_balance)}
-
-U heeft {balance_status_text} budget voor toegang tot het casino.
 {SEPARATOR}
+U heeft {balance_status_text} budget voor toegang tot het casino.
 """)
+
     if balance_status_text == "onvoldoende":
         destination = "saldo-overzicht"
+
     else:
         destination = "hoofdmenu"
 
     input(f"Druk op Enter om door te gaan naar het {destination}.")
     blank_lines(2)
+    time.sleep(0.5)
 
 
 def main_menu(playing_balance, first_name, surname, gender, birth_date, age):
@@ -391,68 +500,93 @@ def main_menu(playing_balance, first_name, surname, gender, birth_date, age):
         first_name (str): The guest's first name.
         surname (str): The guest's surname.
         gender (str): The guest's gender.
-        birth_date (datetime.datetime): The guest's date of birth.
+        birth_date (datetime.datetime): The guest's birthdate.
         age (int): The guest's current age.
 
     Returns:
         int or float: The updated playing balance.
     """
     while True:
-        print(f"""{CASINO_NAME} - Hoofdmenu
+        clear_terminal()
+
+        print(f"""
+{CASINO_NAME} - Hoofdmenu
 {SEPARATOR}
 1. Spellen
 2. Saldo
 3. Account
 0. Stoppen
 {SEPARATOR}""")
+
         try:
-            choice = int(input("Kies een optie: "))
-            if 0 <= choice <= 3:
-                if choice == 1:
-                    if playing_balance <= 0:
-                        print()
-                        print("U heeft onvoldoende saldo om te spelen")
-                        blank_lines(2)
-                        playing_balance, _ = show_balance(playing_balance)
-                    else:
-                        blank_lines(2)
-                        playing_balance = game_selection.choose_game(playing_balance)
-                elif choice == 2:
-                    blank_lines(2)
-                    playing_balance, _ = show_balance(playing_balance)
-                elif choice == 3:
-                    blank_lines(2)
-                    show_account(first_name, surname, gender, birth_date, age)
-                elif choice == 0:
-                    while True:
-                        print()
-                        validation = input("Weet u zeker dat u wilt stoppen? (Ja/Nee) ").lower()
-                        if validation not in ("ja", "nee"):
-                            print()
-                            print(INVALID_INPUT)
-                            print()
-                            continue
-                        else:
-                            if validation == "nee":
-                                break
-                            else:
-                                blank_lines(2)
-                                return playing_balance
-                    blank_lines(2)
-                    continue
-            else:
-                print(INVALID_INPUT)
+            menu_choice = int(input("Kies een optie: "))
         except ValueError:
             print(INVALID_INPUT)
             print()
+            continue
+
+        if menu_choice not in range(0, 4):
+            print(INVALID_INPUT)
+            continue
+
+        if menu_choice == 1:
+            if playing_balance <= 0:
+                print()
+                print("U heeft onvoldoende saldo om te spelen.")
+                blank_lines(2)
+                playing_balance, _ = manage_balance(playing_balance)
+
+            else:
+                blank_lines(2)
+                playing_balance = game_selection.choose_game(playing_balance)
+
+        elif menu_choice == 2:
+            blank_lines(2)
+            playing_balance, _ = manage_balance(playing_balance)
+
+        elif menu_choice == 3:
+            blank_lines(2)
+            show_account(first_name, surname, gender, birth_date, age)
+
+        elif menu_choice == 0:
+            while True:
+                print()
+                confirmation = input("Weet u zeker dat u wilt stoppen? (Ja/Nee) ").lower()
+
+                if confirmation not in ("ja", "nee"):
+                    print()
+                    print(INVALID_INPUT)
+                    print()
+                    continue
+
+                if confirmation == "nee":
+                    break
+
+                blank_lines(2)
+
+                return playing_balance
+
+            blank_lines(2)
+            continue
 
 
 def show_parting_message(playing_balance):
-    print(f"""{CASINO_NAME} - Checkout
+    """
+    Displays the checkout message and final playing balance.
+
+    Args:
+        playing_balance (int or float): The guest's final playing balance.
+    """
+    clear_terminal()
+
+    print(f"""
+{CASINO_NAME} - Vertrek
 {SEPARATOR}
 U verlaat het casino met een eindsaldo van {format_currency(playing_balance)}.
 
-Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!
+Bedankt voor uw bezoek aan {CASINO_NAME} 
+en graag tot ziens!
+{SEPARATOR}
 """)
 
 
@@ -470,23 +604,23 @@ def main():
     salutation = determine_salutation(first_name, surname, gender)
     vat_amount, fixed_costs = calculate_costs()
     playing_balance = calculate_starting_balance(starting_balance, fixed_costs)
-    balance_status, balance_status_text = determine_balance_status(playing_balance)
+    _, balance_status_text = determine_balance_status(playing_balance)
     age = calculate_age(birth_date)
 
-    show_results(salutation, starting_balance, vat_amount,
-                 fixed_costs, playing_balance, balance_status_text)
+    show_results(salutation, starting_balance, vat_amount, fixed_costs, playing_balance, balance_status_text)
 
     while True:
-        balance_status, balance_status_text = determine_balance_status(playing_balance)
+        balance_status, _ = determine_balance_status(playing_balance)
 
         if balance_status == "sufficient":
             playing_balance = main_menu(playing_balance, first_name, surname, gender, birth_date, age)
             break
-        else:
-            trigger = "insufficient_starting_balance"
-            playing_balance, action = show_balance(playing_balance, fixed_costs, trigger)
-            if action == "end_program":
-                break
+
+        trigger = "insufficient_starting_balance"
+        playing_balance, action = manage_balance(playing_balance, fixed_costs, trigger)
+
+        if action == "end_program":
+            break
 
     show_parting_message(playing_balance)
     exit(0)
