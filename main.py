@@ -1,7 +1,14 @@
 import game_selection
-from utils import blank_lines
-from utils import format_currency
-from utils import clear_terminal
+
+from utils.utils import blank_lines
+from utils.utils import format_currency
+from utils.utils import clear_terminal
+from utils.utils import get_confirmation
+
+from utils.constants import CASINO_NAME
+from utils.constants import SEPARATOR
+from utils.constants import INVALID_INPUT
+
 import datetime
 import time
 
@@ -10,11 +17,7 @@ import time
 # CONFIGURATION
 # ==============================
 
-SEPARATOR = "-" * 50
 MIN_AGE = 18
-INVALID_INPUT = "\nOngeldige invoer. Probeer het opnieuw.\n"
-CASINO_NAME = "Casino de Gouden Driehoek"
-
 
 # Fixed casino costs
 ADMISSION_PRICE = 5.00
@@ -352,7 +355,7 @@ Huidig saldo: {format_currency(playing_balance)}
                 if amount == 0:
                     print("U keert terug naar het saldo-overzicht.")
                     blank_lines(2)
-                    time.sleep(0.5)
+                    time.sleep(1)
                     break
 
                 playing_balance += amount
@@ -365,8 +368,7 @@ Huidig saldo: {format_currency(playing_balance)}
                 print()
                 print("Het bedrag is succesvol gestort.")
                 blank_lines(2)
-                input("Druk op Enter om terug te gaan naar het saldo-overzicht.")
-                time.sleep(0.5)
+                input("Druk op Enter om terug te keren naar het saldo-overzicht.")
                 break
 
         elif menu_choice == 2:
@@ -409,8 +411,7 @@ Huidig saldo: {format_currency(playing_balance)}
                     print()
                     print("Het bedrag is succesvol opgenomen.")
                     blank_lines(2)
-                    input("Druk op Enter om terug te gaan naar het saldo-overzicht.")
-                    time.sleep(0.5)
+                    input("Druk op Enter om terug te keren naar het saldo-overzicht.")
                     break
 
         elif menu_choice == 0:
@@ -428,13 +429,6 @@ Huidig saldo: {format_currency(playing_balance)}
                 print(SEPARATOR)
                 print()
                 input("Druk op Enter om verder te gaan naar het hoofdmenu.")
-                time.sleep(0.5)
-                blank_lines(2)
-
-                return playing_balance, "continue"
-
-            if trigger:
-                print(f"U keert terug naar de {trigger}.")
                 blank_lines(2)
 
                 return playing_balance, "continue"
@@ -488,7 +482,6 @@ U heeft {balance_status_text} budget voor toegang tot het casino.
 
     input(f"Druk op Enter om door te gaan naar het {destination}.")
     blank_lines(2)
-    time.sleep(0.5)
 
 
 def main_menu(playing_balance, first_name, surname, gender, birth_date, age):
@@ -548,22 +541,12 @@ def main_menu(playing_balance, first_name, surname, gender, birth_date, age):
             blank_lines(2)
             show_account(first_name, surname, gender, birth_date, age)
 
+
         elif menu_choice == 0:
-            while True:
-                print()
-                confirmation = input("Weet u zeker dat u wilt stoppen? (Ja/Nee) ").lower()
+            confirmation = get_confirmation(playing_balance, "stoppen")
 
-                if confirmation not in ("ja", "nee"):
-                    print()
-                    print(INVALID_INPUT)
-                    print()
-                    continue
-
-                if confirmation == "nee":
-                    break
-
+            if confirmation:
                 blank_lines(2)
-
                 return playing_balance
 
             blank_lines(2)

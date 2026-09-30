@@ -1,14 +1,11 @@
 # Spel dat ik tijdens de les als opdracht heb gebouwd. Hierin heb ik bijvoorbeeld
 # nog geen try/except-validatie toegevoegd. Omdat dobbelen wel in game_selection
 # is opgenomen, laat ik het spel in het project staan.
-
 import random
 import time
-from utils import format_currency
+from utils.utils import format_currency
 
-SEPARATOR = '-' * 50
-CASINO_NAME = "Casino de Gouden Driehoek"
-INVALID_INPUT = "\nOngeldige invoer. Probeer het opnieuw.\n"
+from utils.constants import INVALID_INPUT
 
 
 def play(playing_balance):

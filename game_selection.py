@@ -1,15 +1,10 @@
-from games import roulette, dobbelen, fruitmachine
-from utils import blank_lines
-from utils import clear_terminal
+from games import roulette, dice_game, slot_machine
+from utils.utils import blank_lines
+from utils.utils import clear_terminal
 
-
-# ==============================
-# CONFIGURATION
-# ==============================
-
-SEPARATOR = "-" * 50
-CASINO_NAME = "Casino de Gouden Driehoek"
-INVALID_INPUT = "\nOngeldige invoer. Probeer het opnieuw.\n"
+from utils.constants import CASINO_NAME
+from utils.constants import SEPARATOR
+from utils.constants import INVALID_INPUT
 
 
 # ==============================
@@ -18,8 +13,8 @@ INVALID_INPUT = "\nOngeldige invoer. Probeer het opnieuw.\n"
 
 AVAILABLE_GAMES = {
     1: ("Roulette", roulette),
-    2: ("Dobbelen", dobbelen),
-    3: ("Fruitmachine", fruitmachine),
+    2: ("Dobbelen", dice_game),
+    3: ("Fruitmachine", slot_machine),
 }
 
 
