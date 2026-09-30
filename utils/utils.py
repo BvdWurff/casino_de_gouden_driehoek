@@ -1,10 +1,18 @@
+# ==============================
+# FUNCTION IMPORTS
+# ==============================
+
 import os
 import subprocess
 
+# ==============================
+# CONSTANTS
+# ==============================
 
-SEPARATOR = "-" * 50
-CASINO_NAME = "Casino de Gouden Driehoek"
-INVALID_INPUT = "\nOngeldige invoer. Probeer het opnieuw.\n"
+from utils.constants import (
+    INVALID_INPUT,
+    CHOOSE_OPTION,
+)
 
 
 def blank_lines(number):
@@ -23,7 +31,7 @@ def clear_terminal():
     subprocess.run(command, shell=True, check=False)
 
 
-def get_confirmation(playing_balance, action):
+def get_confirmation(action):
     confirmation = True
 
     while True:
@@ -40,3 +48,17 @@ def get_confirmation(playing_balance, action):
 
         blank_lines(2)
         return confirmation
+
+def get_menu_choice(valid_choices):
+    while True:
+        try:
+            menu_choice = int(input(CHOOSE_OPTION))
+        except ValueError:
+            print(INVALID_INPUT)
+            continue
+
+        if menu_choice not in valid_choices:
+            print(INVALID_INPUT)
+            continue
+
+        return menu_choice

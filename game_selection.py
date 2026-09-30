@@ -1,10 +1,27 @@
-from games import roulette, dice_game, slot_machine
-from utils.utils import blank_lines
-from utils.utils import clear_terminal
+# ==============================
+# FUNCTION IMPORTS
+# ==============================
 
-from utils.constants import CASINO_NAME
-from utils.constants import SEPARATOR
-from utils.constants import INVALID_INPUT
+from games import (
+    roulette,
+    dice_game,
+    slot_machine,
+)
+from utils.utils import (
+    blank_lines,
+    clear_terminal,
+    get_menu_choice,
+)
+
+
+# ==============================
+# CONSTANTS
+# ==============================
+
+from utils.constants import (
+    CASINO_NAME,
+    SEPARATOR,
+)
 
 
 # ==============================
@@ -30,7 +47,7 @@ def choose_game(playing_balance):
         playing_balance (int or float): The current playing balance.
 
     Returns:
-        int or float: The updated playing balance.
+        int or float: The updated playing balance when returning to the main menu.
     """
     while True:
         clear_terminal()
@@ -39,22 +56,14 @@ def choose_game(playing_balance):
 {CASINO_NAME} - Spellen
 {SEPARATOR}""")
 
-        for game_number, game in AVAILABLE_GAMES.items():
-            print(f"{game_number}. {game[0]}")
+        for game_number, (game_name, _) in AVAILABLE_GAMES.items():
+            print(f"{game_number}. {game_name}")
 
         print(f"""
 0. Terug naar hoofdmenu
 {SEPARATOR}""")
 
-        try:
-            menu_choice = int(input("Kies een optie: "))
-        except ValueError:
-            print(INVALID_INPUT)
-            continue
-
-        if menu_choice not in range(0, len(AVAILABLE_GAMES) + 1):
-            print(INVALID_INPUT)
-            continue
+        menu_choice = get_menu_choice(range(0, len(AVAILABLE_GAMES) + 1))
 
         blank_lines(2)
 
@@ -66,5 +75,4 @@ def choose_game(playing_balance):
 
         if action == "main_menu":
             blank_lines(2)
-
             return playing_balance

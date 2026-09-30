@@ -1,12 +1,27 @@
 # Spel dat ik tijdens de les als opdracht heb gebouwd. Hierin heb ik bijvoorbeeld
 # nog geen try/except-validatie toegevoegd. Omdat dobbelen wel in game_selection
 # is opgenomen, laat ik het spel in het project staan.
+
+# ==============================
+# FUNCTION IMPORTS
+# ==============================
+
+from utils.utils import format_currency
+
 import random
 import time
-from utils.utils import format_currency
+
+
+# ==============================
+# CONSTANTS
+# ==============================
 
 from utils.constants import INVALID_INPUT
 
+
+# ==============================
+# PROGRAM FLOW
+# ==============================
 
 def play(playing_balance):
     print()

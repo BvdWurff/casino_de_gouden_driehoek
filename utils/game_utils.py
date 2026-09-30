@@ -1,21 +1,77 @@
-from main import manage_balance
+# ==============================
+# FUNCTION IMPORTS
+# ==============================
 
-from utils.utils import blank_lines
-from utils.utils import format_currency
-from utils.utils import clear_terminal
+from utils.balance_utils import (
+    manage_balance,
+)
+from utils.utils import (
+    blank_lines,
+    clear_terminal,
+    format_currency,
+    get_menu_choice,
+)
 
-from utils.constants import SEPARATOR
-from utils.constants import INVALID_INPUT
-from utils.constants import CONTINUE
-from utils.constants import CHOOSE_OPTION
+
+# ==============================
+# CONSTANTS
+# ==============================
+
+from utils.constants import (
+    CONTINUE,
+    INVALID_INPUT,
+    SEPARATOR,
+)
 
 
-def get_game_action(trigger, playing_balance, stake):
+# ==============================
+# GAME INFORMATION
+# ==============================
+
+def show_game_instructions(
+    trigger,
+    game_instructions
+):
+    """
+    Displays the instructions for the selected game.
+
+    Args:
+        trigger (str): The current game.
+        game_instructions (str): The instructions for the selected game.
+    """
+    clear_terminal()
+
+    print(f"""
+{trigger.capitalize()} - Speluitleg
+{SEPARATOR}
+Welkom bij de {trigger}.
+
+{game_instructions}
+{SEPARATOR}
+""")
+
+    input(CONTINUE)
+
+
+# ==============================
+# MENUS AND NAVIGATION
+# ==============================
+
+def get_game_action(
+    playing_balance,
+    stake,
+    trigger
+):
     """
     Displays the stop menu and determines how the player wants to continue.
 
+    Args:
+        playing_balance (int or float): The current playing balance.
+        stake (int or float): The current stake.
+        trigger (str): The current game.
+
     Returns:
-        str: The action to perform after leaving the stop menu.
+        tuple: The action, updated playing balance and stake.
     """
     clear_terminal()
 
@@ -31,45 +87,160 @@ Wat wilt u doen?
 0. Terug naar het hoofdmenu
 {SEPARATOR}""")
 
+    menu_choice = get_menu_choice(range(0, 4))
+
+    if menu_choice == 1:
+        blank_lines(2)
+        action = "continue"
+
+    elif menu_choice == 2:
+        blank_lines(2)
+        action = "change_stake"
+
+    elif menu_choice == 3:
+        blank_lines(2)
+        action = "choose_game"
+
+    else:
+        blank_lines(2)
+        action = "main_menu"
+
+    return action, playing_balance, stake
+
+
+def game_menu(
+    playing_balance,
+    stake,
+    trigger,
+    game_instructions
+):
+    """
+    Displays the game menu and handles the selected menu option.
+
+    Args:
+        playing_balance (int or float): The current playing balance.
+        stake (int or float): The current stake.
+        trigger (str): The current game.
+        game_instructions (str): The instructions for the selected game.
+
+    Returns:
+        tuple: The action, updated playing balance and stake.
+    """
     while True:
-        try:
-            menu_choice = int(input(CHOOSE_OPTION))
-        except ValueError:
-            print(INVALID_INPUT)
+        clear_terminal()
+
+        print(f"""
+{trigger.capitalize()} - Spelmenu
+{SEPARATOR}
+1. Spel starten
+2. Spelinstructies
+3. Saldo-overzicht
+0. Stoppen
+{SEPARATOR}""")
+
+        menu_choice = get_menu_choice(range(0, 4))
+
+        blank_lines(2)
+        action = "continue"
+
+        if menu_choice == 2:
+            show_game_instructions(
+                trigger,
+                game_instructions
+            )
             continue
-
-        if menu_choice not in range(0, 4):
-            print(INVALID_INPUT)
-            continue
-
-        if menu_choice == 1:
-            blank_lines(2)
-            action = "continue"
-
-        elif menu_choice == 2:
-            blank_lines(2)
-            action, playing_balance, stake = get_stake(playing_balance, trigger, stake)
-            action = "change_stake"
 
         elif menu_choice == 3:
-            action = "choose_game"
+            playing_balance, action = manage_balance(
+                playing_balance,
+                trigger=trigger
+            )
+            continue
 
-        else:
-            action = "main_menu"
+        elif menu_choice == 0:
+            action, playing_balance, stake = get_game_action(
+                playing_balance,
+                stake,
+                trigger
+            )
+
+            if action in ("continue", "change_stake"):
+                continue
 
         return action, playing_balance, stake
 
 
-def handle_insufficient_balance(playing_balance, trigger, stake):
+def get_round_action(
+    playing_balance,
+    stake,
+    trigger
+):
+    """
+    Displays the round menu and determines how the player wants to continue.
+
+    Args:
+        playing_balance (int or float): The current playing balance.
+        stake (int or float): The current stake.
+        trigger (str): The current game.
+
+    Returns:
+        tuple: The action, updated playing balance and stake.
+    """
+    while True:
+        clear_terminal()
+
+        print(f"""
+{trigger.capitalize()} - Ronde-overzicht
+{SEPARATOR}
+Huidig saldo:    {format_currency(playing_balance)}
+Huidige inzet:   {format_currency(stake)}
+
+1. Nieuwe ronde
+2. Inzet wijzigen
+0. Stoppen
+{SEPARATOR}""")
+
+        menu_choice = get_menu_choice(range(0, 3))
+
+        if menu_choice == 1:
+            action = "continue"
+
+        elif menu_choice == 2:
+            blank_lines(2)
+            action = "change_stake"
+
+        else:
+            action, playing_balance, stake = get_game_action(
+                playing_balance,
+                stake,
+                trigger
+            )
+
+            if action == "continue":
+                continue
+
+        return action, playing_balance, stake
+
+
+# ==============================
+# STAKE AND BALANCE
+# ==============================
+
+def handle_insufficient_balance(
+    playing_balance,
+    stake,
+    trigger
+):
     """
     Handles a stake that exceeds the current playing balance.
 
     Args:
         playing_balance (int or float): The current playing balance.
-        trigger (str): Game the function is triggered from.
+        stake (int or float): The current stake.
+        trigger (str): The current game.
 
     Returns:
-        tuple: The updated playing balance and the action to perform.
+        tuple: The action, updated playing balance and stake.
     """
     while True:
         print(f"""Uw saldo is ontoereikend voor deze inzet.
@@ -79,15 +250,7 @@ def handle_insufficient_balance(playing_balance, trigger, stake):
 0. Stoppen
 {SEPARATOR}""")
 
-        try:
-            menu_choice = int(input(CHOOSE_OPTION))
-        except ValueError:
-            print(INVALID_INPUT)
-            continue
-
-        if not 0 <= menu_choice <= 2:
-            print(INVALID_INPUT)
-            continue
+        menu_choice = get_menu_choice(range(0, 3))
 
         if menu_choice == 1:
             print()
@@ -95,30 +258,48 @@ def handle_insufficient_balance(playing_balance, trigger, stake):
 
         elif menu_choice == 2:
             blank_lines(2)
-            playing_balance, _ = manage_balance(playing_balance, trigger=trigger)
+
+            playing_balance, _ = manage_balance(
+                playing_balance,
+                trigger=trigger
+            )
             action = "new_playing_balance"
 
         else:
-            action, playing_balance, stake = get_game_action(trigger, playing_balance, stake)
+            action, playing_balance, stake = get_game_action(
+                playing_balance,
+                stake,
+                trigger
+            )
+
+            if action == "continue":
+                continue
 
         return action, playing_balance, stake
 
 
-def get_stake(playing_balance, trigger, stake):
+def get_stake(
+    playing_balance,
+    stake,
+    trigger,
+    show_header=True
+):
     """
     Requests and validates the player's stake.
 
     Args:
         playing_balance (int or float): The current playing balance.
-        trigger (str): The game the function is triggered from.
+        stake (int or float): The current stake.
+        trigger (str): The current game.
+        show_header (bool): Whether the stake screen header should be displayed.
 
     Returns:
-        tuple: The stake, updated playing balance and action to perform.
+        tuple: The action, updated playing balance and stake.
     """
     while True:
         action = "continue"
 
-        if trigger is not "get_round_action":
+        if show_header:
             clear_terminal()
 
             print(f"""
@@ -130,7 +311,10 @@ Uw huidige inzet bedraagt {format_currency(stake)}.
 
         while True:
             try:
-                stake = float(input("Hoeveel wilt u inzetten? € "))
+                stake = round(
+                    float(input("Hoeveel wilt u inzetten? € ")),
+                    2
+                )
             except ValueError:
                 print(INVALID_INPUT)
                 continue
@@ -143,7 +327,12 @@ Uw huidige inzet bedraagt {format_currency(stake)}.
 
             if stake > playing_balance:
                 blank_lines(2)
-                action, playing_balance, stake = handle_insufficient_balance(playing_balance, trigger, stake)
+
+                action, playing_balance, stake = handle_insufficient_balance(
+                    playing_balance,
+                    stake,
+                    trigger
+                )
 
                 if action in ("continue", "change_stake"):
                     continue
@@ -159,107 +348,5 @@ Uw huidige inzet bedraagt {format_currency(stake)}.
             blank_lines(2)
 
             action = "continue"
+
             return action, playing_balance, stake
-
-
-def show_welcome_message(trigger, game_instructions):
-    """
-    Displays the slot machine game instructions.
-    """
-    clear_terminal()
-
-    print(f"""
-{trigger.capitalize()} - Speluitleg
-{SEPARATOR}
-Welkom bij de {trigger}.
-
-{game_instructions}
-{SEPARATOR}
-""")
-    input(CONTINUE)
-
-
-def game_menu(trigger, game_instructions, playing_balance, stake):
-    while True:
-        clear_terminal()
-
-        print(f"""
-{trigger.capitalize()} - Spelmenu
-{SEPARATOR}
-1. Spel starten
-2. Spelinstructies
-3. Saldo-overzicht
-0. Stoppen
-{SEPARATOR}""")
-        try:
-            menu_choice = int(input(CHOOSE_OPTION))
-        except ValueError:
-            print(INVALID_INPUT)
-            print()
-            input(CONTINUE)
-            continue
-
-        if menu_choice not in range(0, 4):
-            print(INVALID_INPUT)
-            input(CONTINUE)
-            continue
-
-        blank_lines(2)
-        action = "continue"
-
-        if menu_choice == 2:
-            show_welcome_message(trigger, game_instructions)
-            continue
-
-        elif menu_choice == 3:
-            playing_balance, action = manage_balance(playing_balance, trigger=trigger)
-            continue
-
-        elif menu_choice == 0:
-            action, playing_balance, stake = get_game_action(trigger, playing_balance, stake)
-
-            if action in ("continue", "change_stake"):
-                continue
-
-        return action, playing_balance, stake
-
-
-def get_round_action(playing_balance, stake, trigger):
-    while True:
-        clear_terminal()
-        print(f"""
-{trigger.capitalize()} - Ronde-overzicht
-{SEPARATOR}     
- Huidige saldo:    {format_currency(playing_balance)}
- Huidige inzet:    {format_currency(stake)}     
-
- 1. Nieuwe ronde
- 2. Inzet wijzigen
- 0. Stoppen
- {SEPARATOR}""")
-        try:
-            menu_choice = int(input(CHOOSE_OPTION))
-        except ValueError:
-            print(INVALID_INPUT)
-            input(CONTINUE)
-            continue
-
-        if not 0 <= menu_choice <= 2:
-            print(INVALID_INPUT)
-            input(CONTINUE)
-            continue
-
-        if menu_choice == 1:
-            action = "continue"
-
-        elif menu_choice == 2:
-            blank_lines(2)
-            action = "change_stake"
-
-        else:
-            action, playing_balance, stake = get_game_action(trigger, playing_balance, stake)
-            continue
-
-        return action, playing_balance, stake
-
-
