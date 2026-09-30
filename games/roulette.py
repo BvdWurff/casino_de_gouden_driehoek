@@ -6,11 +6,10 @@ import random
 import time
 
 from utils.game_utils import (
-    game_menu,
     get_game_action,
     get_stake,
-    handle_insufficient_balance,
-    show_game_instructions,
+    prepare_game,
+    resolve_insufficient_balance,
 )
 from utils.utils import (
     blank_lines,
@@ -25,8 +24,14 @@ from utils.utils import (
 # ==============================
 
 from utils.constants import (
+    BLACK,
+    CONTINUE_PROMPT,
+    GREEN,
     INVALID_INPUT,
+    RED,
+    RESET,
     SEPARATOR,
+    WHITE_BACKGROUND,
 )
 
 
@@ -35,12 +40,20 @@ from utils.constants import (
 # ==============================
 
 TRIGGER = "roulettetafel"
+MAX_RECENT_RESULTS = 10
 
 GAME_INSTRUCTIONS = """Het doel van roulette is om te voorspellen waar het balletje zal landen.
 Kies waarop u wilt inzetten en bepaal vervolgens uw inzet.
 Het balletje kan op een vakje met één van de getallen van 0 tot en met 36 landen.
 Ieder vakje heeft een kleur: rood, zwart of groen.
 In het keuze-overzicht ziet u per optie hoeveel winst u kunt behalen."""
+
+
+# ==============================
+# STATE
+# ==============================
+
+roulette_history = []
 
 
 # ==============================
@@ -67,60 +80,6 @@ def select_number():
         print(INVALID_INPUT)
 
 
-def get_bet_choice(playing_balance, stake, trigger):
-    """
-    Displays the available roulette bets and requests the player's choice.
-
-    Args:
-        playing_balance (int or float): The current playing balance.
-        stake (int or float): The current stake.
-        trigger (str): The current game.
-
-    Returns:
-        tuple: The action, selected bet and optional roulette number.
-    """
-    while True:
-        clear_terminal()
-
-        print(f"""
-{trigger.capitalize()} - Inzetmogelijkheden
-{SEPARATOR}
-1. Rood   - winst: 1x inzet
-2. Zwart  - winst: 1x inzet
-3. Groen  - winst: 35x inzet
-4. Even   - winst: 1x inzet
-5. Oneven - winst: 1x inzet
-6. Nummer - winst: 35x inzet
-
-0. Stoppen
-{SEPARATOR}""")
-
-        bet_choice = get_menu_choice(range(0, 7))
-
-        action = "continue"
-        selected_number = None
-
-        if bet_choice == 6:
-            print()
-            selected_number = select_number()
-
-        elif bet_choice == 0:
-            blank_lines(2)
-            action, playing_balance, stake = get_game_action(
-                playing_balance,
-                stake,
-                trigger
-            )
-
-            # A valid bet still needs to be selected when the game is resumed.
-            if action == "continue":
-                continue
-
-        blank_lines(2)
-
-        return action, bet_choice, selected_number
-
-
 def get_bet_choice_text(bet_choice):
     """
     Converts the internal roulette bet choice to its Dutch display text.
@@ -134,29 +93,132 @@ def get_bet_choice_text(bet_choice):
     match bet_choice:
         case 1:
             choice_text = "Rood"
-
         case 2:
             choice_text = "Zwart"
-
         case 3:
             choice_text = "Groen"
-
         case 4:
             choice_text = "Even"
-
         case 5:
             choice_text = "Oneven"
-
         case 6:
             choice_text = "Nummer"
-
         case _:
             choice_text = "Onbekend"
 
     return choice_text
 
 
-def confirm_bet(playing_balance, stake, bet_choice, selected_number, trigger):
+def get_bet_choice(
+    playing_balance,
+    stake,
+    recent_results,
+    trigger
+):
+    """
+    Displays the available roulette bets and requests the player's choice.
+
+    Args:
+        playing_balance (int or float): The current playing balance.
+        stake (int or float): The current stake.
+        recent_results (list): The stored recent roulette results.
+        trigger (str): The current game.
+
+    Returns:
+        tuple: The action, selected bet and optional roulette number.
+    """
+    while True:
+        clear_terminal()
+
+        print(f"""
+{trigger.capitalize()} - Inzetmogelijkheden
+{SEPARATOR}""")
+
+        if recent_results:
+            print(f"""Laatste resultaten:
+{format_recent_results(recent_results)}
+""")
+
+        print(f"""1. Rood   - winst: 1x inzet
+2. Zwart  - winst: 1x inzet
+3. Groen  - winst: 35x inzet
+4. Even   - winst: 1x inzet
+5. Oneven - winst: 1x inzet
+6. Nummer - winst: 35x inzet
+
+0. Stoppen
+{SEPARATOR}""")
+
+        bet_choice = get_menu_choice(range(0, 7))
+        action = "continue"
+        selected_number = None
+
+        if bet_choice == 6:
+            print()
+            selected_number = select_number()
+
+        elif bet_choice == 0:
+            blank_lines(2)
+            action, playing_balance, stake = get_game_action(playing_balance, stake, trigger)
+
+            # A valid bet still needs to be selected when the game is resumed.
+            if action == "continue":
+                continue
+
+        blank_lines(2)
+        return action, bet_choice, selected_number
+
+
+def change_bet(
+    playing_balance,
+    stake,
+    bet_choice,
+    selected_number,
+    recent_results,
+    trigger
+):
+    """
+    Changes the current roulette bet and handles a stake-change action when requested.
+
+    Args:
+        playing_balance (int or float): The current playing balance.
+        stake (int or float): The current stake.
+        bet_choice (int): The current roulette bet.
+        selected_number (int or None): The current roulette number.
+        recent_results (list): The stored recent roulette results.
+        trigger (str): The current game.
+
+    Returns:
+        tuple: The action, playing balance, stake, bet choice
+        and selected roulette number.
+    """
+    previous_bet_choice = bet_choice
+    previous_selected_number = selected_number
+
+    action, bet_choice, selected_number = get_bet_choice(
+        playing_balance,
+        stake,
+        recent_results,
+        trigger
+    )
+
+    if action == "change_stake":
+        # Keep the previous bet when only the stake is changed.
+        bet_choice = previous_bet_choice
+        selected_number = previous_selected_number
+        action, playing_balance, stake = get_stake(playing_balance, stake, trigger)
+
+    return action, playing_balance, stake, bet_choice, selected_number
+
+
+def confirm_bet(
+    playing_balance,
+    stake,
+    bet_choice,
+    selected_number,
+    recent_results,
+    trigger
+):
     """
     Displays the current bet and allows the player to confirm or modify it.
 
@@ -165,6 +227,7 @@ def confirm_bet(playing_balance, stake, bet_choice, selected_number, trigger):
         stake (int or float): The current stake.
         bet_choice (int): The selected roulette bet.
         selected_number (int or None): The selected roulette number.
+        recent_results (list): The stored recent roulette results.
         trigger (str): The current game.
 
     Returns:
@@ -173,22 +236,29 @@ def confirm_bet(playing_balance, stake, bet_choice, selected_number, trigger):
     """
     while True:
         clear_terminal()
-
         choice_text = get_bet_choice_text(bet_choice)
 
-        print(f"""{trigger.capitalize()} - Spelopties
+        print(f"""
+{trigger.capitalize()} - Spelopties
 {SEPARATOR}
-Uw huidige inzet is:
-
+Huidige inzet:
 Inzet:      {format_currency(stake)}
 Keuze:      {choice_text}""")
 
         if bet_choice == 6:
             print(f"Nummer:     {selected_number}")
 
-        print(SEPARATOR)
-
         print(f"""
+Huidig saldo:
+Saldo:      {format_currency(playing_balance)}""")
+
+        if recent_results:
+            print(f"""
+Laatste resultaten:
+{format_recent_results(recent_results)}""")
+
+        print(f"""{SEPARATOR}
+
 Wat wilt u doen?
 {SEPARATOR}
 1. Spelen met huidige inzet
@@ -201,116 +271,65 @@ Wat wilt u doen?
 
         menu_choice = get_menu_choice(range(0, 5))
 
-        if menu_choice == 0:
-            blank_lines(2)
-            action, playing_balance, stake = get_game_action(
-                playing_balance,
-                stake,
-                trigger
-            )
-
-            if action == "continue":
-                continue
-
-            if action == "change_stake":
-                action, playing_balance, stake = get_stake(
-                    playing_balance,
-                    stake,
-                    trigger
-                )
-
-                if action == "continue":
-                    continue
-
-            return action, playing_balance, stake, bet_choice, selected_number
-
         if menu_choice == 1:
             blank_lines(2)
-
             return "continue", playing_balance, stake, bet_choice, selected_number
 
-        if menu_choice == 2:
-            previous_bet_choice = bet_choice
-            previous_selected_number = selected_number
-
+        if menu_choice == 0:
             blank_lines(2)
+            action, playing_balance, stake = get_game_action(playing_balance, stake, trigger)
 
-            action, bet_choice, selected_number = get_bet_choice(
+            if action == "continue":
+                continue
+
+            if action in ("choose_game", "main_menu"):
+                return action, playing_balance, stake, bet_choice, selected_number
+
+            # The only remaining action is a stake change.
+            menu_choice = 3
+
+        if menu_choice == 2:
+            blank_lines(2)
+            action, playing_balance, stake, bet_choice, selected_number = change_bet(
                 playing_balance,
                 stake,
+                bet_choice,
+                selected_number,
+                recent_results,
                 trigger
             )
 
             if action == "continue":
                 continue
-
-            if action == "change_stake":
-                # Keep the previous bet when only the stake is changed.
-                bet_choice = previous_bet_choice
-                selected_number = previous_selected_number
-
-                action, playing_balance, stake = get_stake(
-                    playing_balance,
-                    stake,
-                    trigger
-                )
-
-                if action == "continue":
-                    continue
 
             return action, playing_balance, stake, bet_choice, selected_number
 
         if menu_choice == 3:
             print()
-
-            action, playing_balance, stake = get_stake(
-                playing_balance,
-                stake,
-                trigger
-            )
+            action, playing_balance, stake = get_stake(playing_balance, stake, trigger)
 
             if action == "continue":
                 continue
 
             return action, playing_balance, stake, bet_choice, selected_number
 
-        previous_bet_choice = bet_choice
-        previous_selected_number = selected_number
-
-        selected_number = None
-        blank_lines(2)
-
-        action, playing_balance, stake = get_stake(
-            playing_balance,
-            stake,
-            trigger
-        )
+        # Menu option 4 changes the stake first and then the roulette bet.
+        action, playing_balance, stake = get_stake(playing_balance, stake, trigger)
 
         if action in ("choose_game", "main_menu"):
             return action, playing_balance, stake, bet_choice, selected_number
 
-        action, bet_choice, selected_number = get_bet_choice(
+        action, playing_balance, stake, bet_choice, selected_number = change_bet(
             playing_balance,
             stake,
+            bet_choice,
+            selected_number,
+            recent_results,
             trigger
         )
 
         if action == "continue":
             continue
-
-        if action == "change_stake":
-            # Keep the previous bet when no new valid bet has been selected.
-            bet_choice = previous_bet_choice
-            selected_number = previous_selected_number
-
-            action, playing_balance, stake = get_stake(
-                playing_balance,
-                stake,
-                trigger
-            )
-
-            if action == "continue":
-                continue
 
         return action, playing_balance, stake, bet_choice, selected_number
 
@@ -337,7 +356,6 @@ def determine_color_and_parity(spin_result):
         if spin_result % 2 == 0:
             color = "zwart"
             parity = "even"
-
         else:
             color = "rood"
             parity = "oneven"
@@ -354,13 +372,13 @@ def determine_color_and_parity(spin_result):
 
 
 def determine_win(
-        playing_balance,
-        stake,
-        bet_choice,
-        selected_number,
-        spin_result,
-        color,
-        parity
+    playing_balance,
+    stake,
+    bet_choice,
+    selected_number,
+    spin_result,
+    color,
+    parity
 ):
     """
     Determines whether the roulette bet has won and updates the playing balance.
@@ -377,54 +395,100 @@ def determine_win(
     Returns:
         int or float: The updated playing balance.
     """
-    print(SEPARATOR)
-
     win = False
     multiplier = 2
 
     if bet_choice == 1 and color == "rood":
         win = True
-
     elif bet_choice == 2 and color == "zwart":
         win = True
-
     elif bet_choice == 3 and color == "groen":
         win = True
         multiplier = 36
-
     elif bet_choice == 4 and parity == "even":
         win = True
-
     elif bet_choice == 5 and parity == "oneven":
         win = True
-
     elif bet_choice == 6 and selected_number == spin_result:
         win = True
         multiplier = 36
 
     if win:
-        playing_balance += stake * multiplier
-        playing_balance = round(playing_balance, 2)
+        payout = round(stake * multiplier, 2)
+        playing_balance = round(playing_balance + payout, 2)
 
-        profit = round(stake * multiplier - stake, 2)
-
-        print(f"Gefeliciteerd, u wint {format_currency(profit)}!")
-
+        print(f"""
+Gefeliciteerd, u heeft {GREEN}gewonnen{RESET}!
+Uw uitbetaling bedraagt {format_currency(payout)}.""")
     else:
-        print("Helaas, u verliest uw inzet.")
+        print()
+        print(f"Helaas, u heeft {RED}verloren{RESET}.")
 
-    print(f"Uw nieuwe saldo is {format_currency(playing_balance)}.")
     print()
-
-    input("Druk op Enter om verder te gaan.")
-    blank_lines(2)
-
+    input(CONTINUE_PROMPT)
     return playing_balance
+
+
+def add_recent_result(results, spin_result, color):
+    """
+    Adds a roulette result to the recent-results history.
+
+    Args:
+        results (list): The stored recent roulette results.
+        spin_result (int): The roulette number that was rolled.
+        color (str): The color of the roulette result.
+    """
+    results.append([spin_result, color])
+
+    if len(results) > MAX_RECENT_RESULTS:
+        del results[0]
 
 
 # ==============================
 # OUTPUT
 # ==============================
+
+def get_font_color(color):
+    """
+    Returns the console font color for a roulette color.
+
+    Args:
+        color (str): The roulette color.
+
+    Returns:
+        str: The corresponding ANSI console color.
+    """
+    font_color = RESET
+
+    match color:
+        case "groen":
+            font_color = GREEN
+        case "rood":
+            font_color = RED
+        case "zwart":
+            font_color = BLACK
+
+    return font_color
+
+
+def format_recent_results(results):
+    """
+    Formats the recent roulette results for display.
+
+    Args:
+        results (list): The stored recent roulette results.
+
+    Returns:
+        str: The formatted recent roulette results.
+    """
+    formatted_results = ""
+
+    for number, color in results:
+        font_color = get_font_color(color)
+        formatted_results += f"{font_color}{WHITE_BACKGROUND} {number} {RESET}"
+
+    return formatted_results
+
 
 def show_spin_result(spin_result, color):
     """
@@ -435,8 +499,13 @@ def show_spin_result(spin_result, color):
         color (str): The color of the roulette result.
     """
     clear_terminal()
+    font_color = get_font_color(color)
 
-    blank_lines(2)
+    print(f"""
+{TRIGGER.capitalize()} - Speelronde
+{SEPARATOR}
+""")
+
     print("De croupier rolt het balletje. Veel geluk!")
     time.sleep(1)
     print("...")
@@ -445,8 +514,16 @@ def show_spin_result(spin_result, color):
     time.sleep(1)
     print("...")
     time.sleep(1)
-    print(f"Het balletje is geland op {spin_result} ({color}).")
+
+    print(
+        f"Het balletje is geland op "
+        f"{font_color}{WHITE_BACKGROUND}"
+        f"{spin_result} {color.capitalize()}"
+        f"{RESET}."
+    )
+
     print()
+    print(SEPARATOR)
     time.sleep(1)
 
 
@@ -454,7 +531,7 @@ def show_spin_result(spin_result, color):
 # PROGRAM FLOW
 # ==============================
 
-def play(playing_balance):
+def play(playing_balance) -> tuple[int | float, str]:
     """
     Controls the roulette game flow.
 
@@ -465,48 +542,21 @@ def play(playing_balance):
         tuple: The updated playing balance and the action to perform.
     """
     trigger = TRIGGER
-    stake = 0.0
+    action, playing_balance, stake = prepare_game(playing_balance, trigger, GAME_INSTRUCTIONS)
 
-    show_game_instructions(trigger, GAME_INSTRUCTIONS)
+    if action in ("choose_game", "main_menu"):
+        return playing_balance, action
 
     while True:
-        action, playing_balance, stake = game_menu(
-            playing_balance,
-            stake,
-            trigger,
-            GAME_INSTRUCTIONS
-            )
-
-        if action in ("choose_game", "main_menu"):
-            return playing_balance, action
-
-        if action == "continue":
-            break
-
-    # Determine the initial stake and roulette bet.
-    while True:
-        if stake == 0:
-            action, playing_balance, stake = get_stake(
-                playing_balance,
-                stake,
-                trigger
-            )
-
-            if action in ("choose_game", "main_menu"):
-                return playing_balance, action
-
         action, bet_choice, selected_number = get_bet_choice(
             playing_balance,
             stake,
+            roulette_history,
             trigger
         )
 
         if action == "change_stake":
-            action, playing_balance, stake = get_stake(
-                playing_balance,
-                stake,
-                trigger
-            )
+            action, playing_balance, stake = get_stake(playing_balance, stake, trigger)
 
             if action in ("choose_game", "main_menu"):
                 return playing_balance, action
@@ -525,6 +575,7 @@ def play(playing_balance):
             stake,
             bet_choice,
             selected_number,
+            roulette_history,
             trigger
         )
 
@@ -532,33 +583,19 @@ def play(playing_balance):
             break
 
         if playing_balance < stake:
-            action, playing_balance, stake = handle_insufficient_balance(
-                playing_balance,
-                stake,
-                trigger
-            )
+            action, playing_balance, stake = resolve_insufficient_balance(playing_balance, stake, trigger)
 
             if action in ("choose_game", "main_menu"):
                 break
-
-            if action == "change_stake":
-                action, playing_balance, stake = get_stake(
-                    playing_balance,
-                    stake,
-                    trigger
-                )
-
-                if action in ("choose_game", "main_menu"):
-                    break
 
             # Any balance or stake change must be confirmed before spinning.
             continue
 
         playing_balance = round(playing_balance - stake, 2)
-
         spin_result = random.randint(0, 36)
         color, parity = determine_color_and_parity(spin_result)
 
+        add_recent_result(roulette_history, spin_result, color)
         show_spin_result(spin_result, color)
 
         playing_balance = determine_win(

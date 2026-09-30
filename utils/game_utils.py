@@ -18,7 +18,7 @@ from utils.utils import (
 # ==============================
 
 from utils.constants import (
-    CONTINUE,
+    CONTINUE_PROMPT,
     INVALID_INPUT,
     SEPARATOR,
 )
@@ -28,10 +28,7 @@ from utils.constants import (
 # GAME INFORMATION
 # ==============================
 
-def show_game_instructions(
-    trigger,
-    game_instructions
-):
+def show_game_instructions(trigger, game_instructions):
     """
     Displays the instructions for the selected game.
 
@@ -50,18 +47,14 @@ Welkom bij de {trigger}.
 {SEPARATOR}
 """)
 
-    input(CONTINUE)
+    input(CONTINUE_PROMPT)
 
 
 # ==============================
 # MENUS AND NAVIGATION
 # ==============================
 
-def get_game_action(
-    playing_balance,
-    stake,
-    trigger
-):
+def get_game_action(playing_balance, stake, trigger) -> tuple[str, int | float, int | float]:
     """
     Displays the stop menu and determines how the player wants to continue.
 
@@ -113,7 +106,7 @@ def game_menu(
     stake,
     trigger,
     game_instructions
-):
+) -> tuple[str, int | float, int | float]:
     """
     Displays the game menu and handles the selected menu option.
 
@@ -126,6 +119,8 @@ def game_menu(
     Returns:
         tuple: The action, updated playing balance and stake.
     """
+    action = "continue"
+
     while True:
         clear_terminal()
 
@@ -141,40 +136,27 @@ def game_menu(
         menu_choice = get_menu_choice(range(0, 4))
 
         blank_lines(2)
-        action = "continue"
 
         if menu_choice == 2:
-            show_game_instructions(
-                trigger,
-                game_instructions
-            )
+            show_game_instructions(trigger, game_instructions)
             continue
 
-        elif menu_choice == 3:
-            playing_balance, action = manage_balance(
-                playing_balance,
-                trigger=trigger
-            )
+        if menu_choice == 3:
+            playing_balance, _ = manage_balance(playing_balance, trigger=trigger)
             continue
 
-        elif menu_choice == 0:
-            action, playing_balance, stake = get_game_action(
-                playing_balance,
-                stake,
-                trigger
-            )
+        if menu_choice == 0:
+            action, playing_balance, stake = get_game_action(playing_balance, stake, trigger)
 
-            if action in ("continue", "change_stake"):
+            if action == "continue":
                 continue
 
-        return action, playing_balance, stake
+        break
+
+    return action, playing_balance, stake
 
 
-def get_round_action(
-    playing_balance,
-    stake,
-    trigger
-):
+def get_round_action(playing_balance, stake, trigger) -> tuple[str, int | float, int | float]:
     """
     Displays the round menu and determines how the player wants to continue.
 
@@ -206,20 +188,18 @@ Huidige inzet:   {format_currency(stake)}
             action = "continue"
 
         elif menu_choice == 2:
-            blank_lines(2)
+            print()
             action = "change_stake"
 
         else:
-            action, playing_balance, stake = get_game_action(
-                playing_balance,
-                stake,
-                trigger
-            )
+            action, playing_balance, stake = get_game_action(playing_balance, stake, trigger)
 
             if action == "continue":
                 continue
 
-        return action, playing_balance, stake
+        break
+
+    return action, playing_balance, stake
 
 
 # ==============================
@@ -230,7 +210,7 @@ def handle_insufficient_balance(
     playing_balance,
     stake,
     trigger
-):
+) -> tuple[str, int | float, int | float]:
     """
     Handles a stake that exceeds the current playing balance.
 
@@ -258,24 +238,18 @@ def handle_insufficient_balance(
 
         elif menu_choice == 2:
             blank_lines(2)
-
-            playing_balance, _ = manage_balance(
-                playing_balance,
-                trigger=trigger
-            )
+            playing_balance, _ = manage_balance(playing_balance, trigger=trigger)
             action = "new_playing_balance"
 
         else:
-            action, playing_balance, stake = get_game_action(
-                playing_balance,
-                stake,
-                trigger
-            )
+            action, playing_balance, stake = get_game_action(playing_balance, stake, trigger)
 
             if action == "continue":
                 continue
 
-        return action, playing_balance, stake
+        break
+
+    return action, playing_balance, stake
 
 
 def get_stake(
@@ -283,7 +257,7 @@ def get_stake(
     stake,
     trigger,
     show_header=True
-):
+) -> tuple[str, int | float, int | float]:
     """
     Requests and validates the player's stake.
 
@@ -305,16 +279,16 @@ def get_stake(
             print(f"""
 {trigger.capitalize()} - Inzet bepalen
 {SEPARATOR}
-Uw huidige saldo bedraagt {format_currency(playing_balance)}.
-Uw huidige inzet bedraagt {format_currency(stake)}.
-{SEPARATOR}""")
+Uw huidige saldo bedraagt {format_currency(playing_balance)}.""")
+
+            if stake > 0:
+                print(f"Uw huidige inzet bedraagt {format_currency(stake)}.")
+
+            print(SEPARATOR)
 
         while True:
             try:
-                stake = round(
-                    float(input("Hoeveel wilt u inzetten? € ")),
-                    2
-                )
+                stake = round(float(input("Hoeveel wilt u inzetten? € ")), 2)
             except ValueError:
                 print(INVALID_INPUT)
                 continue
@@ -327,12 +301,7 @@ Uw huidige inzet bedraagt {format_currency(stake)}.
 
             if stake > playing_balance:
                 blank_lines(2)
-
-                action, playing_balance, stake = handle_insufficient_balance(
-                    playing_balance,
-                    stake,
-                    trigger
-                )
+                action, playing_balance, stake = handle_insufficient_balance(playing_balance, stake, trigger)
 
                 if action in ("continue", "change_stake"):
                     continue
@@ -344,9 +313,82 @@ Uw huidige inzet bedraagt {format_currency(stake)}.
                 break
 
             print()
-            input(f"Uw inzet is geaccepteerd. {CONTINUE}")
+            input(f"Uw inzet is geaccepteerd. {CONTINUE_PROMPT}")
             blank_lines(2)
 
-            action = "continue"
+            return "continue", playing_balance, stake
 
-            return action, playing_balance, stake
+
+# ==============================
+# GAME FLOW HELPERS
+# ==============================
+
+def prepare_game(
+    playing_balance,
+    trigger,
+    game_instructions
+) -> tuple[str, int | float, int | float]:
+    """
+    Prepares a game by showing its instructions, handling its menu and setting a stake.
+
+    Args:
+        playing_balance (int or float): The current playing balance.
+        trigger (str): The current game.
+        game_instructions (str): The instructions for the selected game.
+
+    Returns:
+        tuple: The action, updated playing balance and stake.
+    """
+    stake = 0.0
+
+    show_game_instructions(trigger, game_instructions)
+
+    while True:
+        action, playing_balance, stake = game_menu(
+            playing_balance,
+            stake,
+            trigger,
+            game_instructions
+        )
+
+        if action in ("choose_game", "main_menu"):
+            break
+
+        if action == "change_stake":
+            action, playing_balance, stake = get_stake(playing_balance, stake, trigger)
+
+            if action in ("choose_game", "main_menu"):
+                break
+
+            continue
+
+        if stake == 0:
+            action, playing_balance, stake = get_stake(playing_balance, stake, trigger)
+
+        break
+
+    return action, playing_balance, stake
+
+
+def resolve_insufficient_balance(
+    playing_balance,
+    stake,
+    trigger
+) -> tuple[str, int | float, int | float]:
+    """
+    Resolves an insufficient balance and applies a requested stake change when needed.
+
+    Args:
+        playing_balance (int or float): The current playing balance.
+        stake (int or float): The current stake.
+        trigger (str): The current game.
+
+    Returns:
+        tuple: The action, updated playing balance and stake.
+    """
+    action, playing_balance, stake = handle_insufficient_balance(playing_balance, stake, trigger)
+
+    if action == "change_stake":
+        action, playing_balance, stake = get_stake(playing_balance, stake, trigger)
+
+    return action, playing_balance, stake

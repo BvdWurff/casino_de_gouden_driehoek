@@ -11,9 +11,9 @@ from utils.balance_utils import (
     manage_balance,
 )
 from utils.utils import (
-    blank_lines, 
-    format_currency, 
-    clear_terminal, 
+    blank_lines,
+    clear_terminal,
+    format_currency,
     get_confirmation,
     get_menu_choice,
 )
@@ -24,13 +24,13 @@ from utils.utils import (
 # ==============================
 
 from utils.constants import (
-    CASINO_NAME,
-    SEPARATOR,
-    INVALID_INPUT,
-    MIN_AGE,
     ADMISSION_PRICE,
-    SERVICE_FEE,
+    CASINO_NAME,
+    INVALID_INPUT,
     MANDATORY_DRINK_PRICE,
+    MIN_AGE,
+    SEPARATOR,
+    SERVICE_FEE,
     VAT_RATE,
 )
 
@@ -51,9 +51,9 @@ def get_user_input():
     starting_balance = 0.0
 
     print()
-    test_run = input("Is dit een test? (Ja/Nee) ").lower()
+    test_mode = input("Is dit een test? (Ja/Nee) ").lower()
 
-    if test_run == "ja":
+    if test_mode == "ja":
         blank_lines(2)
         first_name = "Bart"
         surname = "van der Wurff"
@@ -78,7 +78,10 @@ Vul onderstaande gegevens in om toegang te krijgen.
             print(INVALID_INPUT)
 
         while True:
-            surname_prefix = input("Wat zijn uw tussenvoegsels? (druk op Enter indien niet van toepassing) ")
+            surname_prefix = input(
+                "Wat zijn uw tussenvoegsels? "
+                "(druk op Enter indien niet van toepassing) "
+            )
 
             if not surname_prefix or surname_prefix.replace(" ", "").isalpha():
                 break
@@ -156,7 +159,6 @@ def check_age(birth_date):
     # In that case, February 28 is used as the minimum-age birthday.
     if birth_date.day == 29 and birth_date.month == 2:
         minimum_age_birthday = datetime.datetime(minimum_age_year, 2, 28)
-
     else:
         minimum_age_birthday = birth_date.replace(year=minimum_age_year)
 
@@ -188,10 +190,8 @@ def determine_salutation(first_name, surname, gender):
     """
     if gender == "man":
         salutation = f"meneer {surname}"
-
     elif gender == "vrouw":
         salutation = f"mevrouw {surname}"
-
     else:
         salutation = f"{first_name} {surname}"
 
@@ -235,7 +235,7 @@ def calculate_costs():
     return vat_amount, fixed_costs
 
 
-def calculate_starting_balance(starting_balance, fixed_costs):
+def calculate_starting_balance(starting_balance, fixed_costs) -> int | float:
     """
     Calculates the playing balance after deducting the fixed casino costs.
 
@@ -247,7 +247,6 @@ def calculate_starting_balance(starting_balance, fixed_costs):
         int or float: The initial playing balance.
     """
     playing_balance = starting_balance - fixed_costs
-
     return round(playing_balance, 2)
 
 
@@ -286,7 +285,13 @@ Voor de beste weergave wordt aangeraden het programma in een terminal uit te voe
 of in PyCharm “Emulate terminal in output console” in te schakelen.""")
 
 
-def show_account(first_name, surname, gender, birth_date, age):
+def show_account(
+    first_name,
+    surname,
+    gender,
+    birth_date,
+    age
+):
     """
     Displays the guest's account information.
 
@@ -314,13 +319,13 @@ Leeftijd:           {age}
 
 
 def show_results(
-        salutation,
-        starting_balance,
-        vat_amount,
-        fixed_costs,
-        playing_balance,
-        balance_status,
-        balance_status_text
+    salutation,
+    starting_balance,
+    vat_amount,
+    fixed_costs,
+    playing_balance,
+    balance_status,
+    balance_status_text
 ):
     """
     Displays the guest's registration and cost summary.
@@ -357,7 +362,6 @@ U heeft {balance_status_text} budget voor toegang tot het casino.
 
     if balance_status == "insufficient":
         destination = "saldo-overzicht"
-
     else:
         destination = "hoofdmenu"
 
@@ -388,7 +392,14 @@ Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!
 # MENUS
 # ==============================
 
-def main_menu(playing_balance, first_name, surname, gender, birth_date, age):
+def main_menu(
+    playing_balance,
+    first_name,
+    surname,
+    gender,
+    birth_date,
+    age
+) -> int | float:
     """
     Displays the main menu and handles the selected menu options.
 
@@ -423,7 +434,6 @@ def main_menu(playing_balance, first_name, surname, gender, birth_date, age):
                 print("U heeft onvoldoende saldo om te spelen.")
                 blank_lines(2)
                 playing_balance, _ = manage_balance(playing_balance)
-
             else:
                 blank_lines(2)
                 playing_balance = choose_game(playing_balance)
@@ -441,10 +451,11 @@ def main_menu(playing_balance, first_name, surname, gender, birth_date, age):
 
             if confirmation:
                 blank_lines(2)
-                return playing_balance
+                break
 
             blank_lines(2)
-            continue
+
+    return playing_balance
 
 
 # ==============================
@@ -489,11 +500,7 @@ def main():
             break
 
         trigger = "insufficient_starting_balance"
-        playing_balance, action = manage_balance(
-            playing_balance,
-            fixed_costs=fixed_costs,
-            trigger=trigger
-        )
+        playing_balance, action = manage_balance(playing_balance, fixed_costs=fixed_costs, trigger=trigger)
 
         if action == "end_program":
             break

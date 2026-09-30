@@ -18,9 +18,9 @@ from utils.utils import (
 
 from utils.constants import (
     CASINO_NAME,
+    CONTINUE_PROMPT,
     INVALID_INPUT,
     SEPARATOR,
-    CONTINUE,
 )
 
 
@@ -28,11 +28,7 @@ from utils.constants import (
 # BALANCE MANAGEMENT
 # ==============================
 
-def manage_balance(
-    playing_balance,
-    fixed_costs=0.0,
-    trigger=""
-):
+def manage_balance(playing_balance, fixed_costs=0.0, trigger="") -> tuple[int | float, str]:
     """
     Displays the balance menu and handles deposits and withdrawals.
 
@@ -58,16 +54,12 @@ Huidig saldo: {format_currency(playing_balance)}
 {SEPARATOR}""")
 
         menu_choice = get_menu_choice(range(0, 3))
-
         print()
 
         if menu_choice == 1:
             while True:
                 try:
-                    amount = round(
-                        float(input("Hoeveel wilt u storten? € ")),
-                        2
-                    )
+                    amount = round(float(input("Hoeveel wilt u storten? € ")), 2)
                 except ValueError:
                     print(INVALID_INPUT)
                     continue
@@ -82,10 +74,7 @@ Huidig saldo: {format_currency(playing_balance)}
                     time.sleep(1)
                     break
 
-                playing_balance = round(
-                    playing_balance + amount,
-                    2
-                )
+                playing_balance = round(playing_balance + amount, 2)
 
                 time.sleep(1)
                 print()
@@ -94,7 +83,6 @@ Huidig saldo: {format_currency(playing_balance)}
                 print()
                 print("Het bedrag is succesvol gestort.")
                 blank_lines(2)
-
                 input("Druk op Enter om terug te keren naar het saldo-overzicht.")
                 break
 
@@ -103,16 +91,13 @@ Huidig saldo: {format_currency(playing_balance)}
                 print()
                 print("U heeft onvoldoende saldo voor deze opname.")
                 print()
-                input(CONTINUE)
+                input(CONTINUE_PROMPT)
                 blank_lines(2)
 
             else:
                 while True:
                     try:
-                        amount = round(
-                            float(input("Hoeveel wilt u opnemen? € ")),
-                            2
-                        )
+                        amount = round(float(input("Hoeveel wilt u opnemen? € ")), 2)
                     except ValueError:
                         print(INVALID_INPUT)
                         continue
@@ -132,13 +117,10 @@ Huidig saldo: {format_currency(playing_balance)}
                         print()
                         print("U heeft onvoldoende saldo voor deze opname.")
                         print()
-                        input(CONTINUE)
+                        input(CONTINUE_PROMPT)
                         continue
 
-                    playing_balance = round(
-                        playing_balance - amount,
-                        2
-                    )
+                    playing_balance = round(playing_balance - amount, 2)
 
                     time.sleep(1)
                     print()
@@ -147,7 +129,6 @@ Huidig saldo: {format_currency(playing_balance)}
                     print()
                     print("Het bedrag is succesvol opgenomen.")
                     blank_lines(2)
-
                     input("Druk op Enter om terug te keren naar het saldo-overzicht.")
                     break
 
@@ -155,20 +136,14 @@ Huidig saldo: {format_currency(playing_balance)}
             # Refund fixed costs when the guest leaves due to insufficient starting balance.
             if trigger == "insufficient_starting_balance":
                 if playing_balance < 0:
-                    playing_balance = round(
-                        playing_balance + fixed_costs,
-                        2
-                    )
-
+                    playing_balance = round(playing_balance + fixed_costs, 2)
                     print("De vaste kosten zijn teruggestort.")
                     blank_lines(2)
-
                     return playing_balance, "end_program"
 
                 print("U heeft voldoende budget voor toegang tot het casino!")
                 print(SEPARATOR)
                 print()
-
                 input("Druk op Enter om verder te gaan naar het hoofdmenu.")
                 blank_lines(2)
 

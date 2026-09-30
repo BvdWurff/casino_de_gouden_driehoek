@@ -4,7 +4,6 @@
 
 from games import (
     roulette,
-    dice_game,
     slot_machine,
 )
 from utils.utils import (
@@ -30,8 +29,7 @@ from utils.constants import (
 
 AVAILABLE_GAMES = {
     1: ("Roulette", roulette),
-    2: ("Dobbelen", dice_game),
-    3: ("Fruitmachine", slot_machine),
+    2: ("Fruitmachine", slot_machine),
 }
 
 
@@ -39,7 +37,7 @@ AVAILABLE_GAMES = {
 # PROGRAM FLOW
 # ==============================
 
-def choose_game(playing_balance):
+def choose_game(playing_balance) -> int | float:
     """
     Displays the available games and handles game selection.
 
@@ -64,15 +62,16 @@ def choose_game(playing_balance):
 {SEPARATOR}""")
 
         menu_choice = get_menu_choice(range(0, len(AVAILABLE_GAMES) + 1))
-
         blank_lines(2)
 
         if menu_choice == 0:
-            return playing_balance
+            break
 
         _, game_module = AVAILABLE_GAMES[menu_choice]
         playing_balance, action = game_module.play(playing_balance)
 
         if action == "main_menu":
             blank_lines(2)
-            return playing_balance
+            break
+
+    return playing_balance
