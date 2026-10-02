@@ -5,6 +5,7 @@
 from games import (
     roulette,
     slot_machine,
+    blackjack,
 )
 from utils.utils import (
     blank_lines,
@@ -30,6 +31,7 @@ from utils.constants import (
 AVAILABLE_GAMES = {
     1: ("Roulette", roulette),
     2: ("Fruitmachine", slot_machine),
+    3: ("Blackjack", blackjack),
 }
 
 
