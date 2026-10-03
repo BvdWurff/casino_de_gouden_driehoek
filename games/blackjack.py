@@ -26,6 +26,7 @@ from utils.constants import (
     BLACK,
     RED,
     GREEN,
+    ORANGE,
     RESET,
     CONTINUE_PROMPT,
     SEPARATOR,
@@ -126,7 +127,10 @@ def calculate_hand_values(hand, actor):
                 status = "blackjack"
             else:
                 status = "stand"
-                return int(hand_values[0]), "handwaarde is:", status
+
+            hand_values = str(hand_values)[1:-1]
+
+            return hand_values, "handwaarde is:", status
 
 
     hand_values = [hand_values[0]] + [value for value in hand_values[1:] if value < 21]
@@ -153,17 +157,21 @@ def calculate_hand_values(hand, actor):
 
 ##############################################################################
 
-def determine_win(player_status):
-    if player_status == "bust":
-        return "Helaas, u heeft verloren."
-    else: return "iets"
-
-##############################################################################
-
 def determine_game_results(player_status, player_hand_value, dealer_status, dealer_hand_value):
+    if player_status == "bust":
+        game_result = "lose"
+
+        return game_result
+
+    if "," in player_hand_value:
+        player_hand_value = player_hand_value[-2:]
     player_hand_value = int(player_hand_value)
+
+    if "," in dealer_hand_value:
+        dealer_hand_value = dealer_hand_value[-2:]
     dealer_hand_value = int(dealer_hand_value)
 
+    game_result = "lose"
 
     if player_status == "blackjack":
         if dealer_status == "blackjack":
@@ -172,17 +180,16 @@ def determine_game_results(player_status, player_hand_value, dealer_status, deal
             game_result = "blackjack"
 
     elif player_status == "stand":
-        if dealer_status == "stand":
-            if player_hand_value > dealer_hand_value or dealer_status == "bust":
+        if dealer_status == "bust":
+            game_result = "win"
+
+        elif dealer_status == "stand":
+            if player_hand_value > dealer_hand_value:
                 game_result = "win"
             elif player_hand_value == dealer_hand_value:
                 game_result = "push"
 
-    else:
-        game_result = 'lose'
-
     return game_result
-
 
 ##############################################################################
 
@@ -213,24 +220,38 @@ def prepare_play_hand(player_hand, dealer_hand, trigger, actor):
     print(f"""
 {trigger.capitalize()} - Spelopties
 {SEPARATOR}
-Huidige handen:
-""")
+Huidige handen:""")
 
-    if actor == "player":
+    if actor == "dealer":
         print(f"""
-Dealer:      {format_hand([dealer_hand[0]])} | ??
+Dealer:      {format_hand(dealer_hand)}
 Speler:      {format_hand(player_hand)}
 
+Dealer {dealer_hand_values_text} {dealer_hand_values}
+Speler {player_hand_values_text} {player_hand_values}
+{SEPARATOR}
+""")
+
+    elif player_status == 'bust':
+        print(f"""
+Dealer:      {format_hand(dealer_hand)}
+Speler:      {format_hand(player_hand)}
+""")
+
+        if "," in dealer_hand_values:
+            dealer_hand_values = dealer_hand_values[-2:]
+
+        print(f"""
+Dealer {dealer_hand_values_text} {dealer_hand_values}
 Speler {player_hand_values_text} {player_hand_values}
 {SEPARATOR}
 """)
 
     else:
         print(f"""
-Dealer:      {format_hand(dealer_hand)}
+Dealer:      {format_hand([dealer_hand[0]])} | ??
 Speler:      {format_hand(player_hand)}
 
-Dealer {dealer_hand_values_text} {dealer_hand_values}
 Speler {player_hand_values_text} {player_hand_values}
 {SEPARATOR}
 """)
@@ -248,8 +269,10 @@ Speler {player_hand_values_text} {player_hand_values}
 
 def play_player_hand(shoe, player_hand , dealer_hand, trigger):
     actor = "player"
+    first_turn = True
 
     while True:
+
         (
             dealer_hand_values,
             dealer_hand_values_text,
@@ -265,28 +288,51 @@ def play_player_hand(shoe, player_hand , dealer_hand, trigger):
         )
 
         if player_status == "bust":
-            print(f"Helaas, u heeft {RED}verloren{RESET}.")
+            print(f"U heeft {int(player_hand_values)}. Player bust!")
             print()
             input(CONTINUE_PROMPT)
 
             player_status = "bust"
 
         elif player_status == "blackjack":
-            print(f"U heeft blackjack! Player stand!")
+            print(f"U heeft blackjack!")
             print()
             input(CONTINUE_PROMPT)
 
             player_status = "blackjack"
 
 
-        elif player_hand_values[0] == 0:
-            print(f"U heeft 21! Player stand!")
+        elif player_hand_values == 21:
+            print(f"U heeft 21!")
             print()
             input(CONTINUE_PROMPT)
 
             player_status = "stand"
 
         else:
+            if "A" in dealer_hand[0] and first_turn == True:
+                print("De dealer toont een aas en controleert de gesloten kaart op blackjack", end="")
+                time.sleep(1)
+                print(".", end="")
+                time.sleep(1)
+                print(".", end="")
+                time.sleep(1)
+                print(".", end="\n")
+                print()
+
+                if dealer_status == "blackjack":
+                    print("Dealer heeft blackjack!")
+                    print()
+                    input(CONTINUE_PROMPT)
+
+                    player_status = "bust"
+
+                    return shoe, player_hand, player_hand_values[-2:], player_status
+
+                else:
+                    print("De dealer heeft geen blackjack, het spel gaat verder.")
+                    print()
+
             print(f"""Wat wilt u doen?
 {SEPARATOR}
 1. Hit
@@ -301,22 +347,26 @@ def play_player_hand(shoe, player_hand , dealer_hand, trigger):
                 print(f"U ontvangt een extra kaart: {format_hand([player_hand[-1]])}")
                 print()
                 input(CONTINUE_PROMPT)
+                first_turn = False
                 continue
 
             else:
+                if "," in player_hand_values:
+                    player_hand_values = player_hand_values[-2:]
                 print()
-                print("U heeft stand gekozen. De beurt is aan de dealer.")
+                print(f"U heeft stand gekozen met {player_hand_values}. De beurt is aan de dealer.")
                 print()
                 input(CONTINUE_PROMPT)
 
                 player_status = "stand"
 
-        return shoe, player_hand, player_hand_values[-1], player_status
+        return shoe, player_hand, player_hand_values, player_status
 
 ##############################################################################
 
 def play_dealer_hand(shoe, player_hand, dealer_hand, trigger):
     actor = "dealer"
+    first_turn = True
 
     while True:
         (
@@ -333,9 +383,18 @@ def play_dealer_hand(shoe, player_hand, dealer_hand, trigger):
             actor,
         )
 
+        if first_turn == True:
+            print(f"De dealer onthult de gesloten kaart: {format_hand([dealer_hand[1]])}")
+            print()
+            print(SEPARATOR)
+            print()
+            if player_status != "blackjack":
+                first_turn = False
+                time.sleep(1)
+
         if dealer_status == "hit":
             if player_status == "blackjack":
-                print("Speler heeft blackjack! Player wins!" )
+                print("Dealer heeft geen blackjack." )
                 print()
                 input(CONTINUE_PROMPT)
 
@@ -343,7 +402,7 @@ def play_dealer_hand(shoe, player_hand, dealer_hand, trigger):
 
             else:
                 shoe, dealer_hand = draw_card(shoe, dealer_hand)
-                print(f"Dealer ontvangt een extra kaart: {format_hand([player_hand[-1]])}")
+                print(f"Dealer ontvangt een extra kaart: {format_hand([dealer_hand[-1]])}")
                 print()
                 input(CONTINUE_PROMPT)
                 continue
@@ -357,31 +416,36 @@ def play_dealer_hand(shoe, player_hand, dealer_hand, trigger):
                 dealer_status = "blackjack"
 
             else:
-                print("Dealer heeft blackjack! Dealer wins!")
+                print("Dealer heeft blackjack!")
                 print()
                 input(CONTINUE_PROMPT)
 
                 dealer_status = "blackjack"
 
         elif dealer_status == "bust":
-            print("Handwaarde hoger dan 21. Dealer bust!")
+            print(f"Handwaarde is {dealer_hand_values}. Dealer bust!")
             print()
             input(CONTINUE_PROMPT)
 
             dealer_status = "bust"
 
         else:
-            print("Handwaarde hoger dan 17. Dealer stand!")
+            if "," in dealer_hand_values:
+                dealer_hand_values = dealer_hand_values[-2:]
+
+            print(f"Handwaarde is {dealer_hand_values}. Dealer stand!")
             print()
             input(CONTINUE_PROMPT)
 
             dealer_status = "stand"
 
-        return shoe, dealer_status, dealer_hand_values[-1]
+        return shoe, dealer_status, dealer_hand_values[-2:]
 
 ##############################################################################
 
-def process_payout(game_result, playing_balance, stake):
+def process_payout(game_result, playing_balance, stake, trigger):
+    clear_terminal()
+
     match game_result:
         case "blackjack":
             multiplier = BLACKJACK_MULTIPLIER
@@ -394,15 +458,32 @@ def process_payout(game_result, playing_balance, stake):
 
     payout = stake * multiplier
 
-    if payout > 0:
-        print(f"""
+    print(f"""
+{trigger.capitalize()} - Speluitslag
+{SEPARATOR}
+""")
+
+    if 0 < payout > stake:
+        print(f""" 
 Gefeliciteerd, u heeft {GREEN}gewonnen{RESET}!
 Uw uitbetaling bedraagt {format_currency(payout)}.
+
+{SEPARATOR}
+""")
+
+    elif payout == stake:
+        print(f"""
+Het is {ORANGE}gelijkspel{RESET}.
+U krijgt uw inzet van {format_currency(stake)} terug.
+
+{SEPARATOR}
 """)
     else:
-        print("""
- Helaas, u heeft {RED}verloren{RESET}.       
-        """)
+        print(f"""        
+Helaas, u heeft {RED}verloren{RESET}.       
+       
+{SEPARATOR}
+""")
 
     playing_balance += payout
 
@@ -519,18 +600,21 @@ def play(playing_balance) -> tuple[int | float, str]:
             # Any balance or stake change must be confirmed before spinning.
             continue
 
+        playing_balance = round(playing_balance - stake, 2)
         shoe, dealer_hand, player_hand = deal_cards(shoe)
         play_round(player_hand, dealer_hand, trigger)
 
         shoe, player_hand, player_hand_value, player_status = play_player_hand(shoe, player_hand, dealer_hand, trigger)
         if player_status == "bust":
+            dealer_status = 'stand'
+            dealer_hand_value = ''
             pass
 
         else:
             shoe, dealer_status, dealer_hand_value = play_dealer_hand(shoe, player_hand, dealer_hand, trigger)
 
         game_result = determine_game_results(player_status, player_hand_value, dealer_status, dealer_hand_value)
-        playing_balance = process_payout(game_result, playing_balance, stake)
+        playing_balance = process_payout(game_result, playing_balance, stake, trigger)
         action, playing_balance, stake = get_round_action(playing_balance, stake, trigger)
 
     return playing_balance, action

@@ -22,6 +22,7 @@ CHOOSE_OPTION = "Kies een optie: "
 BLACK = "\033[30m"
 GREEN = "\033[32m"
 RED = "\033[31m"
+ORANGE = "\033[38;5;208m"
 RESET = "\033[0m"
 WHITE_BACKGROUND = "\033[47m"
 
