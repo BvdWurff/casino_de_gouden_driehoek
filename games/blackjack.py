@@ -478,8 +478,7 @@ def process_payout(game_result, playing_balance, stake, trigger):
 
     print(f"""
 {trigger.capitalize()} - Speluitslag
-{SEPARATOR}
-""")
+{SEPARATOR}""")
 
     if 0 < payout > stake:
         print(f""" 
@@ -518,23 +517,17 @@ def play_round(player_hand, dealer_hand, trigger):
 {trigger.capitalize()} - Speelronde
 {SEPARATOR}
 """)
-    print("De kaarten worden gedeeld", end="")
-    #time.sleep(1)
-    print(".", end="")
-    #time.sleep(1)
-    print(".", end="")
-    #time.sleep(1)
-    print(".", end="\n")
+    print("De kaarten worden gedeeld:")
     print()
-    #time.sleep(1)
+    time.sleep(1)
     print(f"1e kaart speler:   {format_hand([player_hand[0]])}")
-    #time.sleep(1)
+    time.sleep(1)
     print(f"1e kaart dealer:   {format_hand([dealer_hand[0]])}")
-    #time.sleep(1)
+    time.sleep(1)
     print(f"2e kaart speler    {format_hand([player_hand[1]])}")
-    #time.sleep(1)
+    time.sleep(1)
     print(f"2e kaart dealer:   ??")
-    #time.sleep(1)
+    time.sleep(1)
     print(SEPARATOR)
     print()
     input(CONTINUE_PROMPT)
