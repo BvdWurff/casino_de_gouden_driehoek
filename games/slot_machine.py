@@ -7,9 +7,9 @@ import time
 
 from utils.game_utils import (
     get_round_action,
-    prepare_game,
     handle_round_setup,
-    show_game_results
+    prepare_game,
+    show_game_results,
 )
 from utils.utils import (
     clear_terminal,
@@ -55,15 +55,15 @@ Uitbetaling:
 # SLOT MACHINE GAME LOGIC
 # ==============================
 
-def determine_win(playing_balance, stake, spin_results, trigger):
+def process_spin_result(playing_balance, stake, spin_results, trigger):
     """
-    Determines whether the spin has won and updates the playing balance.
+    Processes the slot machine result, payout and updated playing balance.
 
     Args:
         playing_balance (int or float): The current playing balance.
         stake (int or float): The amount that was wagered.
         spin_results (list): The symbols generated for the three reels.
-        trigger (str) : The current game.
+        trigger (str): The current game.
 
     Returns:
         int or float: The updated playing balance.
@@ -131,12 +131,13 @@ def get_symbol(symbol):
             return symbol
 
 
-def show_spin_results(spin_results):
+def show_spin_results(spin_results, trigger):
     """
     Displays the slot machine spin and its results.
 
     Args:
         spin_results (list): The symbols generated for the three reels.
+        trigger (str): The current game.
     """
     clear_terminal()
 
@@ -145,10 +146,11 @@ def show_spin_results(spin_results):
     symbol_3 = get_symbol(spin_results[2])
 
     print(f"""
-{TRIGGER.capitalize()} - Speelronde
+{trigger.capitalize()} - Speelronde
 {SEPARATOR}""")
 
     input("Druk op Enter om de hendel over te halen.")
+
     print("""
 De rollen beginnen te draaien. Veel geluk!
 """)
@@ -203,8 +205,8 @@ def play(playing_balance) -> tuple[int | float, str]:
         playing_balance = round(playing_balance - stake, 2)
         spin_results = random.choices(list(SYMBOL_MULTIPLIERS), k=3)
 
-        show_spin_results(spin_results)
-        playing_balance = determine_win(playing_balance, stake, spin_results, trigger)
+        show_spin_results(spin_results, trigger)
+        playing_balance = process_spin_result(playing_balance, stake, spin_results, trigger)
         action, playing_balance, stake = get_round_action(playing_balance, stake, trigger)
 
     return playing_balance, action

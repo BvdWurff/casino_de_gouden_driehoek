@@ -41,7 +41,7 @@ AVAILABLE_GAMES = {
 
 def choose_game(playing_balance) -> int | float:
     """
-    Displays the available games and handles game selection.
+    Displays the available games, starts the selected game and handles navigation.
 
     Args:
         playing_balance (int or float): The current playing balance.
@@ -75,5 +75,7 @@ def choose_game(playing_balance) -> int | float:
         if action == "main_menu":
             blank_lines(2)
             break
+
+        # The "choose_game" action returns naturally to the game selection menu.
 
     return playing_balance

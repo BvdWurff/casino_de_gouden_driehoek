@@ -68,10 +68,10 @@ def get_confirmation(action):
     Returns:
         bool: True when the action is confirmed, otherwise False.
     """
-    confirmation = True
-
     while True:
-        confirmation_choice = input(f"Weet u zeker dat u wilt {action}? (Ja/Nee) ").lower()
+        confirmation_choice = input(
+            f"Weet u zeker dat u wilt {action}? (Ja/Nee) "
+        ).lower()
 
         if confirmation_choice not in ("ja", "nee"):
             print()
@@ -79,11 +79,9 @@ def get_confirmation(action):
             print()
             continue
 
-        if confirmation_choice == "nee":
-            confirmation = False
-
         blank_lines(2)
-        return confirmation
+
+        return confirmation_choice == "ja"
 
 
 def get_menu_choice(valid_choices):

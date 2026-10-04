@@ -26,6 +26,7 @@ from utils.utils import (
 from utils.constants import (
     ADMISSION_PRICE,
     CASINO_NAME,
+    CONTINUE_PROMPT,
     INVALID_INPUT,
     MANDATORY_DRINK_PRICE,
     MIN_AGE,
@@ -36,10 +37,17 @@ from utils.constants import (
 
 
 # ==============================
+# CONFIGURATION
+# ==============================
+
+TEST_MODE = False
+
+
+# ==============================
 # REGISTRATION AND ACCOUNT
 # ==============================
 
-def get_user_input():
+def get_registration_data():
     """
     Collects and validates the guest's registration information.
 
@@ -47,12 +55,10 @@ def get_user_input():
         tuple: The guest's first name, surname, birthdate, gender
         and starting balance.
     """
-    test_mode = False
-
     birth_date = None
     starting_balance = 0.0
 
-    if test_mode:
+    if TEST_MODE:
         blank_lines(2)
         first_name = "Bart"
         surname = "van der Wurff"
@@ -116,7 +122,7 @@ Vul onderstaande gegevens in om toegang te krijgen.
             break
 
         while True:
-            gender = input("Wat is uw geslacht? (Man/Vrouw/Anders) ").lower()
+            gender = input("Wat is uw geslacht? (bijv. Man/Vrouw/Anders) ").lower()
 
             if gender:
                 break
@@ -246,6 +252,7 @@ def calculate_starting_balance(starting_balance, fixed_costs) -> int | float:
         int or float: The initial playing balance.
     """
     playing_balance = starting_balance - fixed_costs
+
     return round(playing_balance, 2)
 
 
@@ -281,7 +288,11 @@ def show_welcome_message():
 Welkom bij {CASINO_NAME}.
 
 Voor de beste weergave wordt aangeraden het programma in een terminal uit te voeren
-of in PyCharm “Emulate terminal in output console” in te schakelen.""")
+of in PyCharm “Emulate terminal in output console” in te schakelen.
+{SEPARATOR}
+""")
+
+    input(CONTINUE_PROMPT)
 
 
 def show_account(
@@ -317,7 +328,7 @@ Leeftijd:           {age}
     blank_lines(2)
 
 
-def show_results(
+def show_registration_summary(
     salutation,
     starting_balance,
     vat_amount,
@@ -432,7 +443,9 @@ def main_menu(
                 print()
                 print("U heeft onvoldoende saldo om te spelen.")
                 blank_lines(2)
+
                 playing_balance, _ = manage_balance(playing_balance)
+
             else:
                 blank_lines(2)
                 playing_balance = choose_game(playing_balance)
@@ -443,7 +456,13 @@ def main_menu(
 
         elif menu_choice == 3:
             blank_lines(2)
-            show_account(first_name, surname, gender, birth_date, age)
+            show_account(
+                first_name,
+                surname,
+                gender,
+                birth_date,
+                age
+            )
 
         elif menu_choice == 0:
             confirmation = get_confirmation("stoppen")
@@ -467,7 +486,14 @@ def main():
     """
     show_welcome_message()
 
-    first_name, surname, birth_date, gender, starting_balance = get_user_input()
+    (
+        first_name,
+        surname,
+        birth_date,
+        gender,
+        starting_balance,
+    ) = get_registration_data()
+
     birth_date = check_age(birth_date)
     salutation = determine_salutation(first_name, surname, gender)
     age = calculate_age(birth_date)
@@ -476,7 +502,7 @@ def main():
     playing_balance = calculate_starting_balance(starting_balance, fixed_costs)
     balance_status, balance_status_text = determine_balance_status(playing_balance)
 
-    show_results(
+    show_registration_summary(
         salutation,
         starting_balance,
         vat_amount,
@@ -499,7 +525,12 @@ def main():
             break
 
         trigger = "insufficient_starting_balance"
-        playing_balance, action = manage_balance(playing_balance, fixed_costs=fixed_costs, trigger=trigger)
+
+        playing_balance, action = manage_balance(
+            playing_balance,
+            fixed_costs=fixed_costs,
+            trigger=trigger
+        )
 
         if action == "end_program":
             break

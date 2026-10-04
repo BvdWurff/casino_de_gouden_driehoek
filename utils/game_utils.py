@@ -19,12 +19,12 @@ from utils.utils import (
 
 from utils.constants import (
     CONTINUE_PROMPT,
-    INVALID_INPUT,
-    SEPARATOR,
     GREEN,
-    RED,
+    INVALID_INPUT,
     ORANGE,
+    RED,
     RESET,
+    SEPARATOR,
 )
 
 
@@ -322,6 +322,11 @@ Uw huidige saldo bedraagt {format_currency(playing_balance)}.""")
 
             return "continue", playing_balance, stake
 
+
+# ==============================
+# OUTPUT
+# ==============================
+
 def show_game_results(game_result, trigger, payout, stake):
     """
     Displays the result of a completed game round.
@@ -339,7 +344,7 @@ def show_game_results(game_result, trigger, payout, stake):
 {SEPARATOR}""")
 
     if game_result == "win":
-        print(f""" 
+        print(f"""
 Gefeliciteerd, u heeft {GREEN}gewonnen{RESET}!
 Uw uitbetaling bedraagt {format_currency(payout)}.
 
@@ -355,8 +360,8 @@ U krijgt uw inzet van {format_currency(stake)} terug.
 """)
 
     else:
-        print(f"""        
-Helaas, u heeft {RED}verloren{RESET}.       
+        print(f"""
+Helaas, u heeft {RED}verloren{RESET}.
 
 {SEPARATOR}
 """)
@@ -441,20 +446,20 @@ def resolve_insufficient_balance(
 
 def handle_round_setup(playing_balance, stake, action, trigger):
     """
-        Handles the shared setup flow before starting a new game round.
+    Handles the shared setup flow before starting a new game round.
 
-        Processes navigation, stake changes and insufficient balance
-        before allowing the next round to start.
+    Processes navigation, stake changes and insufficient balance
+    before allowing the next round to start.
 
-        Args:
-            playing_balance (int or float): The current playing balance.
-            stake (int or float): The current stake.
-            action (str): The current game action.
-            trigger (str): The current game.
+    Args:
+        playing_balance (int or float): The current playing balance.
+        stake (int or float): The current stake.
+        action (str): The current game action.
+        trigger (str): The current game.
 
-        Returns:
-            tuple: The action, updated playing balance and stake.
-        """
+    Returns:
+        tuple: The action, updated playing balance and stake.
+    """
     while True:
         if action in ("choose_game", "main_menu"):
             break

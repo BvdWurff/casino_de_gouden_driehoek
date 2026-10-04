@@ -10,7 +10,7 @@ from utils.game_utils import (
     get_stake,
     prepare_game,
     resolve_insufficient_balance,
-    show_game_results
+    show_game_results,
 )
 from utils.utils import (
     blank_lines,
@@ -45,7 +45,7 @@ MAX_RECENT_RESULTS = 10
 
 GAME_INSTRUCTIONS = """Het doel van roulette is om te voorspellen waar het balletje zal landen.
 Kies waarop u wilt inzetten en bepaal vervolgens uw inzet.
-Het balletje kan op een vakje met één van de getallen van 0 tot en met 36 landen.
+Het balletje kan op een vakje met een van de getallen van 0 tot en met 36 landen.
 Ieder vakje heeft een kleur: rood, zwart of groen.
 In het keuze-overzicht ziet u per optie hoeveel winst u kunt behalen."""
 
@@ -167,6 +167,7 @@ def get_bet_choice(
                 continue
 
         blank_lines(2)
+
         return action, bet_choice, selected_number
 
 
@@ -237,14 +238,14 @@ def confirm_bet(
     """
     while True:
         clear_terminal()
-        choice_text = get_bet_choice_text(bet_choice)
+        bet_choice_text = get_bet_choice_text(bet_choice)
 
         print(f"""
 {trigger.capitalize()} - Spelopties
 {SEPARATOR}
 Huidige inzet:
 Inzet:      {format_currency(stake)}
-Keuze:      {choice_text}""")
+Keuze:      {bet_choice_text}""")
 
         if bet_choice == 6:
             print(f"Nummer:     {selected_number}")
@@ -372,7 +373,7 @@ def determine_color_and_parity(spin_result):
     return color, parity
 
 
-def determine_win(
+def process_spin_result(
     playing_balance,
     stake,
     bet_choice,
@@ -380,10 +381,10 @@ def determine_win(
     spin_result,
     color,
     parity,
-    trigger,
+    trigger
 ):
     """
-    Determines whether the roulette bet has won and updates the playing balance.
+    Processes the roulette result, payout and updated playing balance.
 
     Args:
         playing_balance (int or float): The current playing balance.
@@ -393,12 +394,12 @@ def determine_win(
         spin_result (int): The roulette number that was rolled.
         color (str): The color of the roulette result.
         parity (str): The parity of the roulette result.
-        trigger (str): The current game
+        trigger (str): The current game.
 
     Returns:
         int or float: The updated playing balance.
     """
-    multiplier = 2
+    payout_multiplier = 2
     payout = 0
 
     if bet_choice == 1 and color == "rood":
@@ -407,19 +408,19 @@ def determine_win(
         game_result = "win"
     elif bet_choice == 3 and color == "groen":
         game_result = "win"
-        multiplier = 36
+        payout_multiplier = 36
     elif bet_choice == 4 and parity == "even":
         game_result = "win"
     elif bet_choice == 5 and parity == "oneven":
         game_result = "win"
     elif bet_choice == 6 and selected_number == spin_result:
         game_result = "win"
-        multiplier = 36
+        payout_multiplier = 36
     else:
         game_result = "lose"
 
     if game_result == "win":
-        payout = round(stake * multiplier, 2)
+        payout = round(stake * payout_multiplier, 2)
         playing_balance = round(playing_balance + payout, 2)
 
     show_game_results(game_result, trigger, payout, stake)
@@ -427,19 +428,19 @@ def determine_win(
     return playing_balance
 
 
-def add_recent_result(results, spin_result, color):
+def add_recent_result(recent_results, spin_result, color):
     """
     Adds a roulette result to the recent-results history.
 
     Args:
-        results (list): The stored recent roulette results.
+        recent_results (list): The stored recent roulette results.
         spin_result (int): The roulette number that was rolled.
         color (str): The color of the roulette result.
     """
-    results.append([spin_result, color])
+    recent_results.append([spin_result, color])
 
-    if len(results) > MAX_RECENT_RESULTS:
-        del results[0]
+    if len(recent_results) > MAX_RECENT_RESULTS:
+        del recent_results[0]
 
 
 # ==============================
@@ -469,38 +470,39 @@ def get_font_color(color):
     return font_color
 
 
-def format_recent_results(results):
+def format_recent_results(recent_results):
     """
     Formats the recent roulette results for display.
 
     Args:
-        results (list): The stored recent roulette results.
+        recent_results (list): The stored recent roulette results.
 
     Returns:
         str: The formatted recent roulette results.
     """
     formatted_results = ""
 
-    for number, color in results:
+    for number, color in recent_results:
         font_color = get_font_color(color)
         formatted_results += f"{font_color}{WHITE_BACKGROUND} {number} {RESET}"
 
     return formatted_results
 
 
-def show_spin_result(spin_result, color):
+def show_spin_result(spin_result, color, trigger):
     """
     Displays the roulette spin and its result.
 
     Args:
         spin_result (int): The roulette number that was rolled.
         color (str): The color of the roulette result.
+        trigger (str): The current game.
     """
     clear_terminal()
     font_color = get_font_color(color)
 
     print(f"""
-{TRIGGER.capitalize()} - Speelronde
+{trigger.capitalize()} - Speelronde
 {SEPARATOR}
 """)
 
@@ -595,9 +597,9 @@ def play(playing_balance) -> tuple[int | float, str]:
         color, parity = determine_color_and_parity(spin_result)
 
         add_recent_result(roulette_history, spin_result, color)
-        show_spin_result(spin_result, color)
+        show_spin_result(spin_result, color, trigger)
 
-        playing_balance = determine_win(
+        playing_balance = process_spin_result(
             playing_balance,
             stake,
             bet_choice,
@@ -605,7 +607,7 @@ def play(playing_balance) -> tuple[int | float, str]:
             spin_result,
             color,
             parity,
-            trigger,
+            trigger
         )
 
     return playing_balance, action

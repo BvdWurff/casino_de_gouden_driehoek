@@ -1,5 +1,5 @@
 # ==============================
-# GENERAL
+# CASINO INFORMATION
 # ==============================
 
 CASINO_NAME = "Casino de Gouden Driehoek"
@@ -71,7 +71,5 @@ SUITS = ["♠", "♥", "♦", "♣"]
 RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
 
 BLACKJACK_MULTIPLIER = 2.5
-WIN_MULTIPLIER = 2
-PUSH_MULTIPLIER = 1
-
-
+BLACKJACK_WIN_MULTIPLIER = 2
+BLACKJACK_PUSH_MULTIPLIER = 1
