@@ -1,116 +1,545 @@
+# ==============================
+# FUNCTION IMPORTS
+# ==============================
+
 import datetime
-import game_selection
 
-SEPARATOR = '-' * 32
-MIN_AGE = 18
-INVALID_ANSWER = "Ongeldige invoer. Probeer het opnieuw."
+from game_selection import (
+    choose_game,
+)
+from utils.balance_utils import (
+    manage_balance,
+)
+from utils.utils import (
+    blank_lines,
+    clear_terminal,
+    format_currency,
+    get_confirmation,
+    get_menu_choice,
+)
 
-# Vaste casino kosten
-ADMISSION_PRICE = 5.00
-SERVICE_FEE = 3.50
-MANDATORY_DRINK_PRICE = 2.70
-VAT_RATE = 21.0
 
-print()
-print("Welkom bij Casino de Gouden Driehoek.")
-print("Vul onderstaande gegevens in om toegang te krijgen.")
-print()
+# ==============================
+# CONSTANTS
+# ==============================
 
-# Invoer gebruikersgegevens + validatie of gegevens correct zijn ingevoerd.
-first_name = input("Wat is uw voornaam? ").title()
-while not first_name:
-    print(INVALID_ANSWER)
-    print()
-    first_name = input("Wat is uw voornaam? ").title()
-infix = input("Wat zijn uw tussenvoegsels? (druk op Enter indien niet van toepassing) ")
-surname = input("Wat is uw achternaam? ").title()
-while not surname:
-    print(INVALID_ANSWER)
-    print()
-    surname = input("Wat is uw achternaam? ").title()
-if infix:
-    surname = infix + " " + surname
-date_of_birth = input("Wat is uw geboortedatum? (dd-mm-jjjj) ")
-while not date_of_birth:
-    print(INVALID_ANSWER)
-    print()
-    date_of_birth = input("Wat is uw geboortedatum? (dd-mm-jjjj) ")
-gender = input("Wat is uw geslacht? (man/vrouw/anders) ").lower()
-while not gender:
-    print(INVALID_ANSWER)
-    print()
-    gender = input("Wat is uw geslacht? (man/vrouw/anders) ").lower()
-while True:
-    try:
-        starting_balance = float(input("Wat is uw startbudget? €"))
-        if starting_balance > 0:
+from utils.constants import (
+    ADMISSION_PRICE,
+    CASINO_NAME,
+    CONTINUE_PROMPT,
+    INVALID_INPUT,
+    MANDATORY_DRINK_PRICE,
+    MIN_AGE,
+    SEPARATOR,
+    SERVICE_FEE,
+    VAT_RATE,
+)
+
+
+# ==============================
+# CONFIGURATION
+# ==============================
+
+TEST_MODE = False
+
+
+# ==============================
+# REGISTRATION AND ACCOUNT
+# ==============================
+
+def get_registration_data():
+    """
+    Collects and validates the guest's registration information.
+
+    Returns:
+        tuple: The guest's first name, surname, birthdate, gender
+        and starting balance.
+    """
+    birth_date = None
+    starting_balance = 0.0
+
+    if TEST_MODE:
+        blank_lines(2)
+        first_name = "Bart"
+        surname = "van der Wurff"
+        birth_date = datetime.datetime(1985, 8, 26)
+        gender = "man"
+        starting_balance = 100.00
+
+    else:
+        clear_terminal()
+
+        print(f"""
+Vul onderstaande gegevens in om toegang te krijgen.
+{SEPARATOR}
+""")
+
+        while True:
+            first_name = input("Wat is uw voornaam? ").title()
+
+            if first_name.isalpha():
+                break
+
+            print(INVALID_INPUT)
+
+        while True:
+            surname_prefix = input(
+                "Wat zijn uw tussenvoegsels? "
+                "(druk op Enter indien niet van toepassing) "
+            )
+
+            if not surname_prefix or surname_prefix.replace(" ", "").isalpha():
+                break
+
+            print(INVALID_INPUT)
+
+        while True:
+            surname = input("Wat is uw achternaam? ").title()
+
+            if surname.isalpha():
+                break
+
+            print(INVALID_INPUT)
+
+        if surname_prefix:
+            surname = f"{surname_prefix} {surname}"
+
+        while True:
+            birth_date_input = input("Wat is uw geboortedatum? (dd-mm-jjjj) ")
+
+            try:
+                birth_date = datetime.datetime.strptime(birth_date_input, "%d-%m-%Y")
+            except ValueError:
+                print(INVALID_INPUT)
+                continue
+
+            current_date = datetime.datetime.now()
+
+            if current_date < birth_date:
+                print(INVALID_INPUT)
+                continue
+
             break
-        else:
-            print(INVALID_ANSWER)
-    except ValueError:
-        print(INVALID_ANSWER)
 
-# Huidige datum bepalen en geboortedatum omzetten naar een datetime-object
-current_date = datetime.datetime.now()
-birth_day, birth_month, birth_year = date_of_birth.split("-")
-birth_date = datetime.datetime(int(birth_year), int(birth_month), int(birth_day))
+        while True:
+            gender = input("Wat is uw geslacht? (bijv. Man/Vrouw/Anders) ").lower()
 
-# Datum berekenen waarop de gast de minimale leeftijd heeft
-minimum_age = birth_date.year + MIN_AGE
+            if gender:
+                break
 
-# Bij een geboortedatum op 29-02 is er kans dat de datum van minimumleeftijd niet bestaat,
-# omdat het betreffende jaar geen schrikkeljaar is.
-# Gebruik in dat geval 28-02 als datum voor de minimumleeftijd
-if birth_date.day == 29 and birth_date.month == 2:
-    minimum_age_birthday = datetime.datetime(minimum_age, 2, 28)
-else:
-    minimum_age_birthday = birth_date.replace(year=minimum_age)
+            print(INVALID_INPUT)
 
-if current_date < minimum_age_birthday:
-    print()
-    print(f"De minimale leeftijd voor Casino de Gouden Driehoek is {MIN_AGE} jaar.")
-    print("U heeft deze leeftijd nog niet bereikt.")
-    print(f"U bent van harte welkom vanaf {minimum_age_birthday.day}-{minimum_age_birthday.month}-{minimum_age_birthday.year}.")
-    exit(1)
+        while True:
+            try:
+                starting_balance = round(float(input("Wat is uw speelbudget? € ")), 2)
+            except ValueError:
+                print(INVALID_INPUT)
+                continue
 
-# Bepaal aanspreekvorm
-if gender == "man":
-    salutation = f"meneer {surname}"
-elif gender == "vrouw":
-    salutation = f"mevrouw {surname}"
-else:
-    salutation = f"{first_name} {surname}"
+            if starting_balance > 0:
+                break
 
-# Bereken vaste kosten
-subtotal = ADMISSION_PRICE + SERVICE_FEE + MANDATORY_DRINK_PRICE
-vat_amount = round(subtotal * (VAT_RATE / 100), 2)
-fixed_costs = subtotal + vat_amount
+            print(INVALID_INPUT)
 
-# Controleer of er voldoende budget is voor toegang tot het casino
-playing_balance = starting_balance - fixed_costs
-if playing_balance > 0:
-    balance_status = "voldoende"
-else:
-    balance_status = "onvoldoende"
+        print(SEPARATOR)
+        print()
 
-# Toon resultaat
-print()
-print()
-print(f"Welkom, {salutation}")
-print(SEPARATOR)
-print(f"Startbudget:         € {starting_balance:.2f}")
-print()
-print("Vaste kosten:")
-print(f"- Toegangskosten:    € {ADMISSION_PRICE:.2f}")
-print(f"- Service kosten:    € {SERVICE_FEE:.2f}")
-print(f"- Consumptie:        € {MANDATORY_DRINK_PRICE:.2f}")
-print(f"- BTW ({VAT_RATE:.0f}%):         € {vat_amount:.2f}")
-print(f"Totaal:              € {fixed_costs:.2f}")
-print()
-print(f"Saldo:               € {playing_balance:.2f}")
-print(SEPARATOR)
-print(f"U heeft {balance_status} budget voor toegang tot het casino.")
-print()
+    return first_name, surname, birth_date, gender, starting_balance
 
-if balance_status == "voldoende":
-    game_selection.choose_game(playing_balance)
+
+def check_age(birth_date):
+    """
+    Checks whether the guest meets the minimum age requirement.
+
+    Args:
+        birth_date (datetime.datetime): The guest's birthdate.
+
+    Returns:
+        datetime.datetime: The birthdate if the age requirement is met.
+    """
+    current_date = datetime.datetime.now()
+    minimum_age_year = birth_date.year + MIN_AGE
+
+    # A February 29 birthdate may not exist in the year the minimum age is reached.
+    # In that case, February 28 is used as the minimum-age birthday.
+    if birth_date.day == 29 and birth_date.month == 2:
+        minimum_age_birthday = datetime.datetime(minimum_age_year, 2, 28)
+    else:
+        minimum_age_birthday = birth_date.replace(year=minimum_age_year)
+
+    if current_date < minimum_age_birthday:
+        print(f"""
+{SEPARATOR}
+De minimale leeftijd voor {CASINO_NAME} is {MIN_AGE} jaar.
+U heeft deze leeftijd nog niet bereikt.
+
+U bent van harte welkom vanaf {minimum_age_birthday.strftime("%d-%m-%Y")}.
+{SEPARATOR}""")
+
+        exit(1)
+
+    return birth_date
+
+
+def determine_salutation(first_name, surname, gender):
+    """
+    Determines the appropriate salutation for the guest.
+
+    Args:
+        first_name (str): The guest's first name.
+        surname (str): The guest's surname.
+        gender (str): The guest's gender.
+
+    Returns:
+        str: The salutation used to address the guest.
+    """
+    if gender == "man":
+        salutation = f"meneer {surname}"
+    elif gender == "vrouw":
+        salutation = f"mevrouw {surname}"
+    else:
+        salutation = f"{first_name} {surname}"
+
+    return salutation
+
+
+def calculate_age(birth_date):
+    """
+    Calculates the guest's current age.
+
+    Args:
+        birth_date (datetime.datetime): The guest's birthdate.
+
+    Returns:
+        int: The guest's current age.
+    """
+    current_date = datetime.datetime.now()
+    current_age = current_date.year - birth_date.year
+
+    if (current_date.month, current_date.day) < (birth_date.month, birth_date.day):
+        current_age -= 1
+
+    return current_age
+
+
+# ==============================
+# COSTS AND BALANCE
+# ==============================
+
+def calculate_costs():
+    """
+    Calculates the VAT amount and total fixed casino costs.
+
+    Returns:
+        tuple: The VAT amount and total fixed costs.
+    """
+    subtotal = ADMISSION_PRICE + SERVICE_FEE + MANDATORY_DRINK_PRICE
+    vat_amount = round(subtotal * (VAT_RATE / 100), 2)
+    fixed_costs = round(subtotal + vat_amount, 2)
+
+    return vat_amount, fixed_costs
+
+
+def calculate_starting_balance(starting_balance, fixed_costs) -> int | float:
+    """
+    Calculates the playing balance after deducting the fixed casino costs.
+
+    Args:
+        starting_balance (int or float): The guest's initial budget.
+        fixed_costs (int or float): The total fixed casino costs.
+
+    Returns:
+        int or float: The initial playing balance.
+    """
+    playing_balance = starting_balance - fixed_costs
+
+    return round(playing_balance, 2)
+
+
+def determine_balance_status(playing_balance):
+    """
+    Determines whether the playing balance is sufficient.
+
+    Args:
+        playing_balance (int or float): The current playing balance.
+
+    Returns:
+        tuple: The internal balance status and its Dutch display text.
+    """
+    if playing_balance >= 0:
+        return "sufficient", "voldoende"
+
+    return "insufficient", "onvoldoende"
+
+
+# ==============================
+# OUTPUT
+# ==============================
+
+def show_welcome_message():
+    """
+    Displays the casino welcome message.
+    """
+    clear_terminal()
+
+    print(f"""
+{CASINO_NAME} - Startpagina
+{SEPARATOR}
+Welkom bij {CASINO_NAME}.
+
+Voor de beste weergave wordt aangeraden het programma in een terminal uit te voeren
+of in PyCharm “Emulate terminal in output console” in te schakelen.
+{SEPARATOR}
+""")
+
+    input(CONTINUE_PROMPT)
+
+
+def show_account(
+    first_name,
+    surname,
+    gender,
+    birth_date,
+    age
+):
+    """
+    Displays the guest's account information.
+
+    Args:
+        first_name (str): The guest's first name.
+        surname (str): The guest's surname.
+        gender (str): The guest's gender.
+        birth_date (datetime.datetime): The guest's birthdate.
+        age (int): The guest's current age.
+    """
+    clear_terminal()
+
+    print(f"""
+{CASINO_NAME} - Account
+{SEPARATOR}
+Naam:               {first_name} {surname}
+Geslacht:           {gender.capitalize()}
+Geboortedatum:      {birth_date.strftime("%d-%m-%Y")}
+Leeftijd:           {age}
+{SEPARATOR}
+""")
+
+    input("Druk op Enter om terug te gaan naar het hoofdmenu.")
+    blank_lines(2)
+
+
+def show_registration_summary(
+    salutation,
+    starting_balance,
+    vat_amount,
+    fixed_costs,
+    playing_balance,
+    balance_status,
+    balance_status_text
+):
+    """
+    Displays the guest's registration and cost summary.
+
+    Args:
+        salutation (str): The salutation used to address the guest.
+        starting_balance (int or float): The guest's initial budget.
+        vat_amount (int or float): The VAT amount included in the fixed costs.
+        fixed_costs (int or float): The total fixed casino costs.
+        playing_balance (int or float): The current playing balance.
+        balance_status (str): The internal balance status.
+        balance_status_text (str): The Dutch display text for the balance status.
+    """
+    clear_terminal()
+
+    print(f"""
+Welkom, {salutation}!
+
+{CASINO_NAME} - Kostenoverzicht
+{SEPARATOR}
+Speelbudget:          {format_currency(starting_balance)}
+
+Vaste kosten:
+- Toegangskosten:   - {format_currency(ADMISSION_PRICE)}
+- Servicekosten:    - {format_currency(SERVICE_FEE)}
+- Consumptie:       - {format_currency(MANDATORY_DRINK_PRICE)}
+- BTW ({VAT_RATE:.0f}%):        - {format_currency(vat_amount)}
+Totaal:             - {format_currency(fixed_costs)}
+
+Saldo:                {format_currency(playing_balance)}
+{SEPARATOR}
+U heeft {balance_status_text} budget voor toegang tot het casino.
+""")
+
+    if balance_status == "insufficient":
+        destination = "saldo-overzicht"
+    else:
+        destination = "hoofdmenu"
+
+    input(f"Druk op Enter om door te gaan naar het {destination}.")
+    blank_lines(2)
+
+
+def show_parting_message(playing_balance):
+    """
+    Displays the checkout message and final playing balance.
+
+    Args:
+        playing_balance (int or float): The guest's final playing balance.
+    """
+    clear_terminal()
+
+    print(f"""
+{CASINO_NAME} - Vertrek
+{SEPARATOR}
+U verlaat het casino met een eindsaldo van {format_currency(playing_balance)}.
+
+Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!
+{SEPARATOR}
+""")
+
+
+# ==============================
+# MENUS
+# ==============================
+
+def main_menu(
+    playing_balance,
+    first_name,
+    surname,
+    gender,
+    birth_date,
+    age
+) -> int | float:
+    """
+    Displays the main menu and handles the selected menu options.
+
+    Args:
+        playing_balance (int or float): The current playing balance.
+        first_name (str): The guest's first name.
+        surname (str): The guest's surname.
+        gender (str): The guest's gender.
+        birth_date (datetime.datetime): The guest's birthdate.
+        age (int): The guest's current age.
+
+    Returns:
+        int or float: The updated playing balance.
+    """
+    while True:
+        clear_terminal()
+
+        print(f"""
+{CASINO_NAME} - Hoofdmenu
+{SEPARATOR}
+1. Spellen
+2. Saldo
+3. Account
+0. Stoppen
+{SEPARATOR}""")
+
+        menu_choice = get_menu_choice(range(0, 4))
+
+        if menu_choice == 1:
+            if playing_balance <= 0:
+                print()
+                print("U heeft onvoldoende saldo om te spelen.")
+                blank_lines(2)
+
+                playing_balance, _ = manage_balance(playing_balance)
+
+            else:
+                blank_lines(2)
+                playing_balance = choose_game(playing_balance)
+
+        elif menu_choice == 2:
+            blank_lines(2)
+            playing_balance, _ = manage_balance(playing_balance)
+
+        elif menu_choice == 3:
+            blank_lines(2)
+            show_account(
+                first_name,
+                surname,
+                gender,
+                birth_date,
+                age
+            )
+
+        elif menu_choice == 0:
+            confirmation = get_confirmation("stoppen")
+
+            if confirmation:
+                blank_lines(2)
+                break
+
+            blank_lines(2)
+
+    return playing_balance
+
+
+# ==============================
+# PROGRAM FLOW
+# ==============================
+
+def main():
+    """
+    Controls the main program flow.
+    """
+    show_welcome_message()
+
+    (
+        first_name,
+        surname,
+        birth_date,
+        gender,
+        starting_balance,
+    ) = get_registration_data()
+
+    birth_date = check_age(birth_date)
+    salutation = determine_salutation(first_name, surname, gender)
+    age = calculate_age(birth_date)
+
+    vat_amount, fixed_costs = calculate_costs()
+    playing_balance = calculate_starting_balance(starting_balance, fixed_costs)
+    balance_status, balance_status_text = determine_balance_status(playing_balance)
+
+    show_registration_summary(
+        salutation,
+        starting_balance,
+        vat_amount,
+        fixed_costs,
+        playing_balance,
+        balance_status,
+        balance_status_text
+    )
+
+    while True:
+        if balance_status == "sufficient":
+            playing_balance = main_menu(
+                playing_balance,
+                first_name,
+                surname,
+                gender,
+                birth_date,
+                age
+            )
+            break
+
+        trigger = "insufficient_starting_balance"
+
+        playing_balance, action = manage_balance(
+            playing_balance,
+            fixed_costs=fixed_costs,
+            trigger=trigger
+        )
+
+        if action == "end_program":
+            break
+
+        balance_status, _ = determine_balance_status(playing_balance)
+
+    show_parting_message(playing_balance)
+    exit(0)
+
+
+if __name__ == "__main__":
+    main()

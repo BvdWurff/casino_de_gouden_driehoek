@@ -1,34 +1,81 @@
-import dobbelen
-import roulette
+# ==============================
+# FUNCTION IMPORTS
+# ==============================
 
-SEPARATOR = '-' * 32
-INVALID_ANSWER = "Ongeldige invoer. Probeer het opnieuw."
+from games import (
+    roulette,
+    slot_machine,
+    blackjack,
+)
+from utils.utils import (
+    blank_lines,
+    clear_terminal,
+    get_menu_choice,
+)
+
+
+# ==============================
+# CONSTANTS
+# ==============================
+
+from utils.constants import (
+    CASINO_NAME,
+    SEPARATOR,
+)
+
+
+# ==============================
+# AVAILABLE GAMES
+# ==============================
 
 AVAILABLE_GAMES = {
-    "roulette": roulette,
-    "dobbelen": dobbelen
+    1: ("Roulette", roulette),
+    2: ("Fruitmachine", slot_machine),
+    3: ("Blackjack", blackjack),
 }
 
-def choose_game(playing_balance):
+
+# ==============================
+# PROGRAM FLOW
+# ==============================
+
+def choose_game(playing_balance) -> int | float:
+    """
+    Displays the available games, starts the selected game and handles navigation.
+
+    Args:
+        playing_balance (int or float): The current playing balance.
+
+    Returns:
+        int or float: The updated playing balance when returning to the main menu.
+    """
     while True:
-        print("Kies een spel uit de onderstaande lijst of typ 'stoppen' om het casino te verlaten.")
-        print()
-        print("Beschikbare spellen:")
-        print(SEPARATOR)
-        for game in AVAILABLE_GAMES:
-            print(game.title())
-        print(SEPARATOR)
-        print()
-        selected_game = input("Uw keuze: ").lower()
-        if selected_game == "stoppen":
-            print()
-            print(f"U verlaat het casino met een eindsaldo van €{playing_balance:.2f}.")
-            print()
-            print("Bedankt voor uw bezoek aan Casino de Gouden Driehoek.")
-            print("Graag tot ziens!")
-            exit(0)
-        elif selected_game in AVAILABLE_GAMES:
-            playing_balance = AVAILABLE_GAMES[selected_game].play(playing_balance)
-        else:
-            print()
-            print(INVALID_ANSWER)
+        clear_terminal()
+
+        print(f"""
+{CASINO_NAME} - Spellen
+{SEPARATOR}""")
+
+        for game_number, (game_name, _) in AVAILABLE_GAMES.items():
+            print(f"{game_number}. {game_name}")
+
+        print(f"""
+0. Terug naar hoofdmenu
+{SEPARATOR}""")
+
+        menu_choice = get_menu_choice(range(0, len(AVAILABLE_GAMES) + 1))
+        blank_lines(2)
+
+        if menu_choice == 0:
+            break
+
+        _, game_module = AVAILABLE_GAMES[menu_choice]
+        playing_balance, action = game_module.play(playing_balance)
+
+        if action == "main_menu":
+            blank_lines(2)
+            break
+
+        # The "choose_game" action returns naturally to the game selection menu.
+
+    return playing_balance
