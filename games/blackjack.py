@@ -9,12 +9,11 @@ from utils.game_utils import (
     prepare_game,
     get_menu_choice,
     get_round_action,
-    resolve_insufficient_balance,
-    get_stake,
+    handle_round_setup,
+    show_game_results,
 )
 from utils.utils import (
     clear_terminal,
-    format_currency
 )
 
 # ==============================
@@ -25,8 +24,6 @@ from utils.constants import (
     WHITE_BACKGROUND,
     BLACK,
     RED,
-    GREEN,
-    ORANGE,
     RESET,
     CONTINUE_PROMPT,
     SEPARATOR,
@@ -86,7 +83,7 @@ def get_new_shoe():
 
 ##############################################################################
 
-def deal_cards(shoe, cards_until_shuffle):
+def deal_cards(shoe, cards_until_shuffle: int):
 
     player_hand = [shoe.pop(0)]
     dealer_hand = [shoe.pop(0)]
@@ -99,7 +96,7 @@ def deal_cards(shoe, cards_until_shuffle):
 
 ##############################################################################
 
-def draw_card(shoe, cards_until_shuffle, playing_hand):
+def draw_card(shoe, cards_until_shuffle: int, playing_hand):
 
     playing_hand.append(shoe.pop(0))
     cards_until_shuffle -= 1
@@ -232,6 +229,11 @@ def prepare_play_hand(player_hand, dealer_hand, trigger, actor):
     dealer_hand_values, dealer_hand_values_text, dealer_status = calculate_hand_values(dealer_hand, "dealer")
     player_hand_values, player_hand_values_text, player_status = calculate_hand_values(player_hand, "player")
 
+    if actor == "dealer":
+        if "," in player_hand_values:
+            player_hand_values = player_hand_values[-2:]
+            player_hand_values_text = "handwaarde is:"
+
     print(f"""
 {trigger.capitalize()} - Spelopties
 {SEPARATOR}
@@ -292,22 +294,21 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand , dealer_hand, trigg
             print()
             input(CONTINUE_PROMPT)
 
-            player_status = "bust"
+            break
 
         elif player_status == "blackjack":
             print(f"U heeft blackjack!")
             print()
             input(CONTINUE_PROMPT)
 
-            player_status = "blackjack"
-
+            break
 
         elif player_status == "stand":
             print(f"U heeft 21!")
             print()
             input(CONTINUE_PROMPT)
 
-            player_status = "stand"
+            break
 
         else:
             if first_turn:
@@ -344,8 +345,9 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand , dealer_hand, trigg
                         input(CONTINUE_PROMPT)
 
                         player_status = "dealer_blackjack"
+                        player_hand_values = player_hand_values[-2:]
 
-                        return shoe, cards_until_shuffle, player_hand, player_hand_values[-2:], player_status
+                        break
 
                     else:
                         print("De dealer heeft geen blackjack, het spel gaat verder.")
@@ -366,6 +368,7 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand , dealer_hand, trigg
                 print()
                 input(CONTINUE_PROMPT)
                 first_turn = False
+
                 continue
 
             else:
@@ -378,7 +381,9 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand , dealer_hand, trigg
 
                 player_status = "stand"
 
-        return shoe, cards_until_shuffle, player_hand, player_hand_values, player_status
+            break
+
+    return shoe, cards_until_shuffle, player_hand, player_hand_values, player_status
 
 ##############################################################################
 
@@ -457,13 +462,12 @@ def play_dealer_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, trigge
 
             dealer_status = "stand"
 
-        return shoe, cards_until_shuffle, dealer_status, dealer_hand_values[-2:]
+        break
+    return shoe, cards_until_shuffle, dealer_status, dealer_hand_values[-2:]
 
 ##############################################################################
 
 def process_payout(game_result, playing_balance, stake, trigger):
-    clear_terminal()
-
     match game_result:
         case "blackjack":
             multiplier = BLACKJACK_MULTIPLIER
@@ -476,35 +480,18 @@ def process_payout(game_result, playing_balance, stake, trigger):
 
     payout = round(stake * multiplier, 2)
 
-    print(f"""
-{trigger.capitalize()} - Speluitslag
-{SEPARATOR}""")
-
     if 0 < payout > stake:
-        print(f""" 
-Gefeliciteerd, u heeft {GREEN}gewonnen{RESET}!
-Uw uitbetaling bedraagt {format_currency(payout)}.
-
-{SEPARATOR}
-""")
+        game_result = "win"
 
     elif payout == stake:
-        print(f"""
-Het is {ORANGE}gelijkspel{RESET}.
-U krijgt uw inzet van {format_currency(stake)} terug.
+        game_result = "draw"
 
-{SEPARATOR}
-""")
     else:
-        print(f"""        
-Helaas, u heeft {RED}verloren{RESET}.       
-       
-{SEPARATOR}
-""")
+        game_result = "lose"
 
     playing_balance = round(playing_balance + payout, 2)
 
-    input(CONTINUE_PROMPT)
+    show_game_results(game_result, trigger, payout, stake)
 
     return playing_balance
 
@@ -583,33 +570,10 @@ def play(playing_balance):
 
     # Continue playing blackjack hands until another destination is selected.
     while True:
+        action, playing_balance, stake = handle_round_setup(playing_balance, stake, action, trigger)
+
         if action in ("choose_game", "main_menu"):
             break
-
-        if action == "change_stake":
-            action, playing_balance, stake = get_stake(
-                playing_balance,
-                stake,
-                trigger,
-                show_header=False
-            )
-
-            if action in ("choose_game", "main_menu"):
-                break
-
-            action, playing_balance, stake = get_round_action(playing_balance, stake, trigger)
-            continue
-
-        if playing_balance < stake:
-            action, playing_balance, stake = resolve_insufficient_balance(playing_balance, stake, trigger)
-
-            if action in ("choose_game", "main_menu"):
-                break
-
-            action, playing_balance, stake = get_round_action(playing_balance, stake, trigger)
-
-            # Any balance or stake change must be confirmed before spinning.
-            continue
 
         playing_balance = round(playing_balance - stake, 2)
 

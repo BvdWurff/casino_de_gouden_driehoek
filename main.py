@@ -47,13 +47,12 @@ def get_user_input():
         tuple: The guest's first name, surname, birthdate, gender
         and starting balance.
     """
+    test_mode = False
+
     birth_date = None
     starting_balance = 0.0
 
-    print()
-    test_mode = input("Is dit een test? (Ja/Nee) ").lower()
-
-    if test_mode == "ja":
+    if test_mode:
         blank_lines(2)
         first_name = "Bart"
         surname = "van der Wurff"

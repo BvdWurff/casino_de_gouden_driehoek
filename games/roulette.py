@@ -10,6 +10,7 @@ from utils.game_utils import (
     get_stake,
     prepare_game,
     resolve_insufficient_balance,
+    show_game_results
 )
 from utils.utils import (
     blank_lines,
@@ -378,7 +379,8 @@ def determine_win(
     selected_number,
     spin_result,
     color,
-    parity
+    parity,
+    trigger,
 ):
     """
     Determines whether the roulette bet has won and updates the playing balance.
@@ -391,41 +393,37 @@ def determine_win(
         spin_result (int): The roulette number that was rolled.
         color (str): The color of the roulette result.
         parity (str): The parity of the roulette result.
+        trigger (str): The current game
 
     Returns:
         int or float: The updated playing balance.
     """
-    win = False
     multiplier = 2
+    payout = 0
 
     if bet_choice == 1 and color == "rood":
-        win = True
+        game_result = "win"
     elif bet_choice == 2 and color == "zwart":
-        win = True
+        game_result = "win"
     elif bet_choice == 3 and color == "groen":
-        win = True
+        game_result = "win"
         multiplier = 36
     elif bet_choice == 4 and parity == "even":
-        win = True
+        game_result = "win"
     elif bet_choice == 5 and parity == "oneven":
-        win = True
+        game_result = "win"
     elif bet_choice == 6 and selected_number == spin_result:
-        win = True
+        game_result = "win"
         multiplier = 36
+    else:
+        game_result = "lose"
 
-    if win:
+    if game_result == "win":
         payout = round(stake * multiplier, 2)
         playing_balance = round(playing_balance + payout, 2)
 
-        print(f"""
-Gefeliciteerd, u heeft {GREEN}gewonnen{RESET}!
-Uw uitbetaling bedraagt {format_currency(payout)}.""")
-    else:
-        print()
-        print(f"Helaas, u heeft {RED}verloren{RESET}.")
+    show_game_results(game_result, trigger, payout, stake)
 
-    print()
-    input(CONTINUE_PROMPT)
     return playing_balance
 
 
@@ -524,7 +522,8 @@ def show_spin_result(spin_result, color):
 
     print()
     print(SEPARATOR)
-    time.sleep(1)
+    print()
+    input(CONTINUE_PROMPT)
 
 
 # ==============================
@@ -605,7 +604,8 @@ def play(playing_balance) -> tuple[int | float, str]:
             selected_number,
             spin_result,
             color,
-            parity
+            parity,
+            trigger,
         )
 
     return playing_balance, action

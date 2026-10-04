@@ -7,13 +7,12 @@ import time
 
 from utils.game_utils import (
     get_round_action,
-    get_stake,
     prepare_game,
-    resolve_insufficient_balance,
+    handle_round_setup,
+    show_game_results
 )
 from utils.utils import (
     clear_terminal,
-    format_currency,
 )
 
 
@@ -22,12 +21,8 @@ from utils.utils import (
 # ==============================
 
 from utils.constants import (
-    CONTINUE_PROMPT,
-    GREEN,
     JACKPOT_SYMBOL,
     MATCH_MULTIPLIERS,
-    RED,
-    RESET,
     SEPARATOR,
     SYMBOL_MULTIPLIERS,
 )
@@ -60,7 +55,7 @@ Uitbetaling:
 # SLOT MACHINE GAME LOGIC
 # ==============================
 
-def determine_win(playing_balance, stake, spin_results):
+def determine_win(playing_balance, stake, spin_results, trigger):
     """
     Determines whether the spin has won and updates the playing balance.
 
@@ -68,6 +63,7 @@ def determine_win(playing_balance, stake, spin_results):
         playing_balance (int or float): The current playing balance.
         stake (int or float): The amount that was wagered.
         spin_results (list): The symbols generated for the three reels.
+        trigger (str) : The current game.
 
     Returns:
         int or float: The updated playing balance.
@@ -89,7 +85,8 @@ def determine_win(playing_balance, stake, spin_results):
             match_count = value
 
     if match_count == 1:
-        print(f"Helaas, u heeft {RED}verloren{RESET}.")
+        game_result = "lose"
+        payout = 0
 
     else:
         symbol_multiplier = SYMBOL_MULTIPLIERS[matching_symbol]
@@ -102,11 +99,10 @@ def determine_win(playing_balance, stake, spin_results):
         payout = round(stake * symbol_multiplier * match_multiplier + stake, 2)
         playing_balance = round(playing_balance + payout, 2)
 
-        print(f"Gefeliciteerd, u heeft {GREEN}gewonnen{RESET}!")
-        print(f"Uw uitbetaling bedraagt {format_currency(payout)}.")
+        game_result = "win"
 
-    print()
-    input(CONTINUE_PROMPT)
+    show_game_results(game_result, trigger, payout, stake)
+
     return playing_balance
 
 
@@ -199,39 +195,16 @@ def play(playing_balance) -> tuple[int | float, str]:
 
     # Continue playing slot machine rounds until another destination is selected.
     while True:
+        action, playing_balance, stake = handle_round_setup(playing_balance, stake, action, trigger)
+
         if action in ("choose_game", "main_menu"):
             break
-
-        if action == "change_stake":
-            action, playing_balance, stake = get_stake(
-                playing_balance,
-                stake,
-                trigger,
-                show_header=False
-            )
-
-            if action in ("choose_game", "main_menu"):
-                break
-
-            action, playing_balance, stake = get_round_action(playing_balance, stake, trigger)
-            continue
-
-        if playing_balance < stake:
-            action, playing_balance, stake = resolve_insufficient_balance(playing_balance, stake, trigger)
-
-            if action in ("choose_game", "main_menu"):
-                break
-
-            action, playing_balance, stake = get_round_action(playing_balance, stake, trigger)
-
-            # Any balance or stake change must be confirmed before spinning.
-            continue
 
         playing_balance = round(playing_balance - stake, 2)
         spin_results = random.choices(list(SYMBOL_MULTIPLIERS), k=3)
 
         show_spin_results(spin_results)
-        playing_balance = determine_win(playing_balance, stake, spin_results)
+        playing_balance = determine_win(playing_balance, stake, spin_results, trigger)
         action, playing_balance, stake = get_round_action(playing_balance, stake, trigger)
 
     return playing_balance, action

@@ -21,6 +21,10 @@ from utils.constants import (
     CONTINUE_PROMPT,
     INVALID_INPUT,
     SEPARATOR,
+    GREEN,
+    RED,
+    ORANGE,
+    RESET,
 )
 
 
@@ -318,6 +322,47 @@ Uw huidige saldo bedraagt {format_currency(playing_balance)}.""")
 
             return "continue", playing_balance, stake
 
+def show_game_results(game_result, trigger, payout, stake):
+    """
+    Displays the result of a completed game round.
+
+    Args:
+        game_result (str): The result of the game round.
+        trigger (str): The current game.
+        payout (int or float): The amount paid out to the player.
+        stake (int or float): The amount that was wagered.
+    """
+    clear_terminal()
+
+    print(f"""
+{trigger.capitalize()} - Speluitslag
+{SEPARATOR}""")
+
+    if game_result == "win":
+        print(f""" 
+Gefeliciteerd, u heeft {GREEN}gewonnen{RESET}!
+Uw uitbetaling bedraagt {format_currency(payout)}.
+
+{SEPARATOR}
+""")
+
+    elif game_result == "draw":
+        print(f"""
+Het is {ORANGE}gelijkspel{RESET}.
+U krijgt uw inzet van {format_currency(stake)} terug.
+
+{SEPARATOR}
+""")
+
+    else:
+        print(f"""        
+Helaas, u heeft {RED}verloren{RESET}.       
+
+{SEPARATOR}
+""")
+
+    input(CONTINUE_PROMPT)
+
 
 # ==============================
 # GAME FLOW HELPERS
@@ -390,5 +435,55 @@ def resolve_insufficient_balance(
 
     if action == "change_stake":
         action, playing_balance, stake = get_stake(playing_balance, stake, trigger)
+
+    return action, playing_balance, stake
+
+
+def handle_round_setup(playing_balance, stake, action, trigger):
+    """
+        Handles the shared setup flow before starting a new game round.
+
+        Processes navigation, stake changes and insufficient balance
+        before allowing the next round to start.
+
+        Args:
+            playing_balance (int or float): The current playing balance.
+            stake (int or float): The current stake.
+            action (str): The current game action.
+            trigger (str): The current game.
+
+        Returns:
+            tuple: The action, updated playing balance and stake.
+        """
+    while True:
+        if action in ("choose_game", "main_menu"):
+            break
+
+        if action == "change_stake":
+            action, playing_balance, stake = get_stake(
+                playing_balance,
+                stake,
+                trigger,
+                show_header=False
+            )
+
+            if action in ("choose_game", "main_menu"):
+                break
+
+            action, playing_balance, stake = get_round_action(playing_balance, stake, trigger)
+            continue
+
+        if playing_balance < stake:
+            action, playing_balance, stake = resolve_insufficient_balance(playing_balance, stake, trigger)
+
+            if action in ("choose_game", "main_menu"):
+                break
+
+            action, playing_balance, stake = get_round_action(playing_balance, stake, trigger)
+
+            # Any balance or stake change must be confirmed before starting the round.
+            continue
+
+        break
 
     return action, playing_balance, stake
