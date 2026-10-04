@@ -77,31 +77,42 @@ def get_new_shoe():
 
     random.shuffle(shoe)
 
-    return shoe
+    cards_until_shuffle = random.randint(
+        int(len(shoe) * 0.70),
+        int(len(shoe) * 0.90),
+    )
+
+    return shoe, cards_until_shuffle
 
 ##############################################################################
 
-def deal_cards(shoe):
-    dealer_hand = [shoe.pop(0),shoe.pop(1)]
-    player_hand = [shoe.pop(2),shoe.pop(3)]
+def deal_cards(shoe, cards_until_shuffle):
 
-    return shoe, dealer_hand, player_hand
+    player_hand = [shoe.pop(0)]
+    dealer_hand = [shoe.pop(0)]
 
-##############################################################################
-
-def draw_card(shoe, player_hand):
     player_hand.append(shoe.pop(0))
+    dealer_hand.append(shoe.pop(0))
 
-    return shoe, player_hand
+    cards_until_shuffle -= 4
+    return shoe, cards_until_shuffle, dealer_hand, player_hand
 
 ##############################################################################
 
-def calculate_hand_values(hand, actor):
-    status = ""
+def draw_card(shoe, cards_until_shuffle, playing_hand):
+
+    playing_hand.append(shoe.pop(0))
+    cards_until_shuffle -= 1
+
+    return shoe, cards_until_shuffle, playing_hand
+
+##############################################################################
+
+def calculate_hand_values(playing_hand, actor):
     hand_values = [0]
 
-    for card in hand:
-        card_value = card[1::]
+    for card in playing_hand:
+        card_value = card[1:]
 
         if card_value in ("J", "Q", "K"):
             card_value = 10
@@ -123,7 +134,7 @@ def calculate_hand_values(hand, actor):
         if 21 in hand_values:
             hand_values = [21]
 
-            if len(hand) == 2:
+            if len(playing_hand) == 2:
                 status = "blackjack"
             else:
                 status = "stand"
@@ -137,19 +148,23 @@ def calculate_hand_values(hand, actor):
 
     if len(hand_values) > 1:
         hand_values_text = "handwaardes zijn:"
-    else:
-        hand_values_text = "handwaarde is:"
-        hand_value = int(hand_values[0])
+        hand_value = hand_values[-1]
 
-        if hand_value > 21:
-            status = "bust"
-
-        elif actor == "dealer" and hand_value >= 17:
-            status = "stand"
-
+        if actor == "dealer" and hand_value >= 17:
+           status = "stand"
         else:
             status = "hit"
 
+    else:
+        hand_values_text = "handwaarde is:"
+        hand_value = hand_values[0]
+
+        if hand_value > 21:
+            status = "bust"
+        elif actor == "dealer" and hand_value >= 17:
+            status = "stand"
+        else:
+            status = "hit"
 
     hand_values = str(hand_values)[1:-1]
 
@@ -158,7 +173,7 @@ def calculate_hand_values(hand, actor):
 ##############################################################################
 
 def determine_game_results(player_status, player_hand_value, dealer_status, dealer_hand_value):
-    if player_status == "bust":
+    if player_status in ("bust", "dealer_blackjack"):
         game_result = "lose"
 
         return game_result
@@ -232,21 +247,6 @@ Speler {player_hand_values_text} {player_hand_values}
 {SEPARATOR}
 """)
 
-    elif player_status == 'bust':
-        print(f"""
-Dealer:      {format_hand(dealer_hand)}
-Speler:      {format_hand(player_hand)}
-""")
-
-        if "," in dealer_hand_values:
-            dealer_hand_values = dealer_hand_values[-2:]
-
-        print(f"""
-Dealer {dealer_hand_values_text} {dealer_hand_values}
-Speler {player_hand_values_text} {player_hand_values}
-{SEPARATOR}
-""")
-
     else:
         print(f"""
 Dealer:      {format_hand([dealer_hand[0]])} | ??
@@ -267,7 +267,7 @@ Speler {player_hand_values_text} {player_hand_values}
 
 ##############################################################################
 
-def play_player_hand(shoe, player_hand , dealer_hand, trigger):
+def play_player_hand(shoe, cards_until_shuffle, player_hand , dealer_hand, trigger):
     actor = "player"
     first_turn = True
 
@@ -302,7 +302,7 @@ def play_player_hand(shoe, player_hand , dealer_hand, trigger):
             player_status = "blackjack"
 
 
-        elif player_hand_values == 21:
+        elif player_status == "stand":
             print(f"U heeft 21!")
             print()
             input(CONTINUE_PROMPT)
@@ -310,28 +310,46 @@ def play_player_hand(shoe, player_hand , dealer_hand, trigger):
             player_status = "stand"
 
         else:
-            if "A" in dealer_hand[0] and first_turn == True:
-                print("De dealer toont een aas en controleert de gesloten kaart op blackjack", end="")
-                time.sleep(1)
-                print(".", end="")
-                time.sleep(1)
-                print(".", end="")
-                time.sleep(1)
-                print(".", end="\n")
-                print()
+            if first_turn:
+                dealer_card = dealer_hand[0][1:]
 
-                if dealer_status == "blackjack":
-                    print("Dealer heeft blackjack!")
-                    print()
-                    input(CONTINUE_PROMPT)
-
-                    player_status = "bust"
-
-                    return shoe, player_hand, player_hand_values[-2:], player_status
-
+                if dealer_card == "A":
+                    high_card = "aas"
+                elif dealer_card == "K":
+                    high_card = "koning"
+                elif dealer_card == "Q":
+                    high_card = "koningin"
+                elif dealer_card == "J":
+                    high_card = "boer"
+                elif dealer_card == "10":
+                    high_card = "10"
                 else:
-                    print("De dealer heeft geen blackjack, het spel gaat verder.")
+                    high_card = False
+
+                if high_card:
+                    print(f"De dealer toont een {high_card} en controleert de gesloten kaart op blackjack", end="")
+                    time.sleep(1)
+                    print(".", end="")
+                    time.sleep(1)
+                    print(".", end="")
+                    time.sleep(1)
+                    print(".", end="\n")
                     print()
+
+                    if dealer_status == "blackjack":
+                        print(f"dealer draait kaarten om: {format_hand(dealer_hand)}")
+                        print()
+                        print("Dealer heeft blackjack!")
+                        print()
+                        input(CONTINUE_PROMPT)
+
+                        player_status = "dealer_blackjack"
+
+                        return shoe, cards_until_shuffle, player_hand, player_hand_values[-2:], player_status
+
+                    else:
+                        print("De dealer heeft geen blackjack, het spel gaat verder.")
+                        print()
 
             print(f"""Wat wilt u doen?
 {SEPARATOR}
@@ -343,7 +361,7 @@ def play_player_hand(shoe, player_hand , dealer_hand, trigger):
 
             if menu_choice == 1:
                 print()
-                shoe, player_hand = draw_card(shoe, player_hand)
+                shoe, cards_until_shuffle, player_hand = draw_card(shoe, cards_until_shuffle, player_hand)
                 print(f"U ontvangt een extra kaart: {format_hand([player_hand[-1]])}")
                 print()
                 input(CONTINUE_PROMPT)
@@ -360,11 +378,11 @@ def play_player_hand(shoe, player_hand , dealer_hand, trigger):
 
                 player_status = "stand"
 
-        return shoe, player_hand, player_hand_values, player_status
+        return shoe, cards_until_shuffle, player_hand, player_hand_values, player_status
 
 ##############################################################################
 
-def play_dealer_hand(shoe, player_hand, dealer_hand, trigger):
+def play_dealer_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, trigger):
     actor = "dealer"
     first_turn = True
 
@@ -383,7 +401,7 @@ def play_dealer_hand(shoe, player_hand, dealer_hand, trigger):
             actor,
         )
 
-        if first_turn == True:
+        if first_turn:
             print(f"De dealer onthult de gesloten kaart: {format_hand([dealer_hand[1]])}")
             print()
             print(SEPARATOR)
@@ -401,7 +419,7 @@ def play_dealer_hand(shoe, player_hand, dealer_hand, trigger):
                 dealer_status = "no_blackjack"
 
             else:
-                shoe, dealer_hand = draw_card(shoe, dealer_hand)
+                shoe, cards_until_shuffle, dealer_hand = draw_card(shoe, cards_until_shuffle, dealer_hand)
                 print(f"Dealer ontvangt een extra kaart: {format_hand([dealer_hand[-1]])}")
                 print()
                 input(CONTINUE_PROMPT)
@@ -439,7 +457,7 @@ def play_dealer_hand(shoe, player_hand, dealer_hand, trigger):
 
             dealer_status = "stand"
 
-        return shoe, dealer_status, dealer_hand_values[-2:]
+        return shoe, cards_until_shuffle, dealer_status, dealer_hand_values[-2:]
 
 ##############################################################################
 
@@ -456,7 +474,7 @@ def process_payout(game_result, playing_balance, stake, trigger):
         case _:
             multiplier = 0
 
-    payout = stake * multiplier
+    payout = round(stake * multiplier, 2)
 
     print(f"""
 {trigger.capitalize()} - Speluitslag
@@ -485,7 +503,7 @@ Helaas, u heeft {RED}verloren{RESET}.
 {SEPARATOR}
 """)
 
-    playing_balance += payout
+    playing_balance = round(playing_balance + payout, 2)
 
     input(CONTINUE_PROMPT)
 
@@ -552,7 +570,7 @@ def play_round(player_hand, dealer_hand, trigger):
 # PROGRAM FLOW
 # ==============================
 
-def play(playing_balance) -> tuple[int | float, str]:
+def play(playing_balance):
     """
     Controls the blackjack game flow.
 
@@ -564,7 +582,7 @@ def play(playing_balance) -> tuple[int | float, str]:
     """
     trigger = TRIGGER
 
-    shoe = get_new_shoe()
+    shoe, cards_until_shuffle = get_new_shoe()
     action, playing_balance, stake = prepare_game(playing_balance, trigger, GAME_INSTRUCTIONS)
 
     if action in ("choose_game", "main_menu"):
@@ -601,17 +619,24 @@ def play(playing_balance) -> tuple[int | float, str]:
             continue
 
         playing_balance = round(playing_balance - stake, 2)
-        shoe, dealer_hand, player_hand = deal_cards(shoe)
+
+        if cards_until_shuffle <= 0:
+            shoe, cards_until_shuffle = get_new_shoe()
+
+        shoe, cards_until_shuffle, dealer_hand, player_hand = deal_cards(shoe, cards_until_shuffle)
         play_round(player_hand, dealer_hand, trigger)
 
-        shoe, player_hand, player_hand_value, player_status = play_player_hand(shoe, player_hand, dealer_hand, trigger)
+        shoe, cards_until_shuffle, player_hand, player_hand_value, player_status = play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, trigger)
         if player_status == "bust":
-            dealer_status = 'stand'
-            dealer_hand_value = ''
-            pass
+            dealer_status = "stand"
+            dealer_hand_value = ""
+
+        elif player_status == "dealer_blackjack":
+            dealer_status = "blackjack"
+            dealer_hand_value = "21"
 
         else:
-            shoe, dealer_status, dealer_hand_value = play_dealer_hand(shoe, player_hand, dealer_hand, trigger)
+            shoe, cards_until_shuffle, dealer_status, dealer_hand_value = play_dealer_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, trigger)
 
         game_result = determine_game_results(player_status, player_hand_value, dealer_status, dealer_hand_value)
         playing_balance = process_payout(game_result, playing_balance, stake, trigger)
