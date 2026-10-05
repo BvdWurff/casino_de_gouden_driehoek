@@ -10,6 +10,10 @@ from game_selection import (
 from utils.balance_utils import (
     manage_balance,
 )
+from profiles import (
+    login,
+    create_profile,
+)
 from utils.utils import (
     blank_lines,
     clear_terminal,
@@ -26,8 +30,6 @@ from utils.utils import (
 from utils.constants import (
     ADMISSION_PRICE,
     CASINO_NAME,
-    CONTINUE_PROMPT,
-    INVALID_INPUT,
     MANDATORY_DRINK_PRICE,
     MIN_AGE,
     SEPARATOR,
@@ -47,104 +49,7 @@ TEST_MODE = False
 # REGISTRATION AND ACCOUNT
 # ==============================
 
-def get_registration_data():
-    """
-    Collects and validates the guest's registration information.
 
-    Returns:
-        tuple: The guest's first name, surname, birthdate, gender
-        and starting balance.
-    """
-    birth_date = None
-    starting_balance = 0.0
-
-    if TEST_MODE:
-        blank_lines(2)
-        first_name = "Bart"
-        surname = "van der Wurff"
-        birth_date = datetime.datetime(1985, 8, 26)
-        gender = "man"
-        starting_balance = 100.00
-
-    else:
-        clear_terminal()
-
-        print(f"""
-Vul onderstaande gegevens in om toegang te krijgen.
-{SEPARATOR}
-""")
-
-        while True:
-            first_name = input("Wat is uw voornaam? ").title()
-
-            if first_name.isalpha():
-                break
-
-            print(INVALID_INPUT)
-
-        while True:
-            surname_prefix = input(
-                "Wat zijn uw tussenvoegsels? "
-                "(druk op Enter indien niet van toepassing) "
-            )
-
-            if not surname_prefix or surname_prefix.replace(" ", "").isalpha():
-                break
-
-            print(INVALID_INPUT)
-
-        while True:
-            surname = input("Wat is uw achternaam? ").title()
-
-            if surname.isalpha():
-                break
-
-            print(INVALID_INPUT)
-
-        if surname_prefix:
-            surname = f"{surname_prefix} {surname}"
-
-        while True:
-            birth_date_input = input("Wat is uw geboortedatum? (dd-mm-jjjj) ")
-
-            try:
-                birth_date = datetime.datetime.strptime(birth_date_input, "%d-%m-%Y")
-            except ValueError:
-                print(INVALID_INPUT)
-                continue
-
-            current_date = datetime.datetime.now()
-
-            if current_date < birth_date:
-                print(INVALID_INPUT)
-                continue
-
-            break
-
-        while True:
-            gender = input("Wat is uw geslacht? (bijv. Man/Vrouw/Anders) ").lower()
-
-            if gender:
-                break
-
-            print(INVALID_INPUT)
-
-        while True:
-            try:
-                starting_balance = round(float(input("Wat is uw speelbudget? € ")), 2)
-            except ValueError:
-                print(INVALID_INPUT)
-                continue
-
-            if starting_balance > 0:
-                break
-
-            print(INVALID_INPUT)
-
-        print(SEPARATOR)
-        print()
-
-    return first_name, surname, birth_date, gender, starting_balance
 
 
 def check_age(birth_date):
@@ -282,6 +187,9 @@ def show_welcome_message():
     """
     clear_terminal()
 
+    trigger = "startpagina"
+    starting_balance = 0.0
+
     print(f"""
 {CASINO_NAME} - Startpagina
 {SEPARATOR}
@@ -289,10 +197,41 @@ Welkom bij {CASINO_NAME}.
 
 Voor de beste weergave wordt aangeraden het programma in een terminal uit te voeren
 of in PyCharm “Emulate terminal in output console” in te schakelen.
+""")
+
+    while True:
+        print(f"""{SEPARATOR}
+1. Inloggen
+2. Account aanmaken
+0. Stoppen
 {SEPARATOR}
 """)
 
-    input(CONTINUE_PROMPT)
+        menu_choice = get_menu_choice(range(0,3))
+
+        if menu_choice == 1:
+            current_user, starting_balance = login()
+            trigger = "login"
+            break
+
+        elif menu_choice == 2:
+            current_user = create_profile()
+            trigger = "create_profile"
+            break
+
+        elif menu_choice == 0:
+            confirmation = get_confirmation("stoppen")
+
+            if confirmation:
+                blank_lines(2)
+
+                show_parting_message(trigger=trigger)
+                exit(0)
+
+
+            blank_lines(2)
+
+    return current_user, starting_balance, trigger
 
 
 def show_account(
@@ -335,7 +274,8 @@ def show_registration_summary(
     fixed_costs,
     playing_balance,
     balance_status,
-    balance_status_text
+    balance_status_text,
+    trigger,
 ):
     """
     Displays the guest's registration and cost summary.
@@ -348,11 +288,14 @@ def show_registration_summary(
         playing_balance (int or float): The current playing balance.
         balance_status (str): The internal balance status.
         balance_status_text (str): The Dutch display text for the balance status.
+        trigger (str): location that triggered the function
     """
     clear_terminal()
 
-    print(f"""
-Welkom, {salutation}!
+    print("Welkom", end="")
+    if trigger == "login":
+        print(" terug", end="")
+    print(f""", {salutation}!
 
 {CASINO_NAME} - Kostenoverzicht
 {SEPARATOR}
@@ -379,19 +322,28 @@ U heeft {balance_status_text} budget voor toegang tot het casino.
     blank_lines(2)
 
 
-def show_parting_message(playing_balance):
+def show_parting_message(playing_balance=0, trigger=""):
     """
     Displays the checkout message and final playing balance.
 
     Args:
         playing_balance (int or float): The guest's final playing balance.
+        trigger (str): location the function is triggered from
     """
     clear_terminal()
 
     print(f"""
 {CASINO_NAME} - Vertrek
+{SEPARATOR}""")
+
+    if trigger == "startpagina":
+        print("""U verlaat het casino.
+Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!
 {SEPARATOR}
-U verlaat het casino met een eindsaldo van {format_currency(playing_balance)}.
+""")
+
+    else:
+        print(f"""U verlaat het casino met een eindsaldo van {format_currency(playing_balance)}.
 
 Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!
 {SEPARATOR}
@@ -484,41 +436,40 @@ def main():
     """
     Controls the main program flow.
     """
-    show_welcome_message()
+    current_user, starting_balance, trigger = show_welcome_message()
 
-    (
-        first_name,
-        surname,
-        birth_date,
-        gender,
-        starting_balance,
-    ) = get_registration_data()
-
+    birth_date = datetime.datetime.strptime(current_user["birth_date"], "%d-%m-%Y")
     birth_date = check_age(birth_date)
-    salutation = determine_salutation(first_name, surname, gender)
+    salutation = determine_salutation(
+        current_user["first_name"],
+        current_user["surname"],
+        current_user["gender"]
+    )
     age = calculate_age(birth_date)
 
     vat_amount, fixed_costs = calculate_costs()
     playing_balance = calculate_starting_balance(starting_balance, fixed_costs)
-    balance_status, balance_status_text = determine_balance_status(playing_balance)
+    current_user.update(playing_balance = playing_balance)
+    balance_status, balance_status_text = determine_balance_status(current_user["playing_balance"])
 
     show_registration_summary(
         salutation,
         starting_balance,
         vat_amount,
         fixed_costs,
-        playing_balance,
+        current_user["playing_balance"],
         balance_status,
-        balance_status_text
+        balance_status_text,
+        trigger,
     )
 
     while True:
         if balance_status == "sufficient":
             playing_balance = main_menu(
-                playing_balance,
-                first_name,
-                surname,
-                gender,
+                current_user["playing_balance"],
+                current_user["first_name"],
+                current_user["surname"],
+                current_user["gender"],
                 birth_date,
                 age
             )
@@ -527,7 +478,7 @@ def main():
         trigger = "insufficient_starting_balance"
 
         playing_balance, action = manage_balance(
-            playing_balance,
+            current_user["playing_balance"],
             fixed_costs=fixed_costs,
             trigger=trigger
         )

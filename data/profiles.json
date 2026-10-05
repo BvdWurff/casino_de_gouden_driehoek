@@ -1,0 +1,82 @@
+{
+    "bart85": {
+        "password": "test123",
+        "first_name": "Bart",
+        "surname_prefix": "van der",
+        "surname": "Wurff",
+        "birth_date": "26-08-1985",
+        "gender": "Male",
+        "playing_balance": 100.0,
+        "source": "dummy_data"
+    },
+    "bill42": {
+        "password": "Monica",
+        "first_name": "Bill",
+        "surname_prefix": "",
+        "surname": "Clinton",
+        "birth_date": "19-08-1946",
+        "gender": "Male",
+        "playing_balance": 8000.0,
+        "source": "dummy_data"
+    },
+    "oprah": {
+        "password": "YouGetACar",
+        "first_name": "Oprah",
+        "surname_prefix": "",
+        "surname": "Winfrey",
+        "birth_date": "29-01-1954",
+        "gender": "Female",
+        "playing_balance": 900.0,
+        "source": "dummy_data"
+    },
+    "neo": {
+        "password": "RedPill",
+        "first_name": "Keanu",
+        "surname_prefix": "",
+        "surname": "Reeves",
+        "birth_date": "02-09-1964",
+        "gender": "Male",
+        "playing_balance": 1111.0,
+        "source": "dummy_data"
+    },
+    "britneyb": {
+        "password": "OopsIDidItAgain",
+        "first_name": "Britney",
+        "surname_prefix": "",
+        "surname": "Spears",
+        "birth_date": "02-12-1981",
+        "gender": "Female",
+        "playing_balance": 50.0,
+        "source": "dummy_data"
+    },
+    "terminator": {
+        "password": "IllBeBack",
+        "first_name": "Arnold",
+        "surname_prefix": "",
+        "surname": "Schwarzenegger",
+        "birth_date": "30-07-1947",
+        "gender": "Male",
+        "playing_balance": 950000.0,
+        "source": "dummy_data"
+    },
+    "starboy": {
+        "password": "CosmicPerspective",
+        "first_name": "Neil",
+        "surname_prefix": "deGrasse",
+        "surname": "Tyson",
+        "birth_date": "05-10-1958",
+        "gender": "Male",
+        "playing_balance": 4200.0,
+        "source": "dummy_data"
+    },
+    "bart": {
+        "password": "123",
+        "first_name": "Bart",
+        "surname_prefix": "van der",
+        "surname": "Wurff",
+        "birth_date": "26-08-1985",
+        "gender": "man",
+        "playing_balance": 2000.0,
+        "source": "user"
+    }
+}

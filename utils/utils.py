@@ -4,7 +4,7 @@
 
 import os
 import subprocess
-
+import json
 
 # ==============================
 # CONSTANTS
@@ -13,6 +13,11 @@ import subprocess
 from utils.constants import (
     CHOOSE_OPTION,
     INVALID_INPUT,
+    RED,
+    GREEN,
+    ORANGE,
+    WHITE_BACKGROUND,
+    RESET,
 )
 
 
@@ -106,3 +111,9 @@ def get_menu_choice(valid_choices):
             continue
 
         return menu_choice
+
+def print_message(message, color="", background=""):
+    print(f"""
+{color}{background}{message}{RESET}
+""")
+
