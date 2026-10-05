@@ -4,7 +4,6 @@
 
 import os
 import subprocess
-import json
 
 # ==============================
 # CONSTANTS
@@ -74,9 +73,7 @@ def get_confirmation(action):
         bool: True when the action is confirmed, otherwise False.
     """
     while True:
-        confirmation_choice = input(
-            f"Weet u zeker dat u wilt {action}? (Ja/Nee) "
-        ).lower()
+        confirmation_choice = input(f"Weet u zeker dat u wilt {action}? (Ja/Nee) ").lower()
 
         if confirmation_choice not in ("ja", "nee"):
             print()

@@ -55,18 +55,15 @@ Uitbetaling:
 # SLOT MACHINE GAME LOGIC
 # ==============================
 
-def process_spin_result(playing_balance, stake, spin_results, trigger):
+def process_spin_result(current_user, stake, spin_results, trigger):
     """
     Processes the slot machine result, payout and updated playing balance.
 
     Args:
-        playing_balance (int or float): The current playing balance.
+        current_user (dict): The profile of the current user.
         stake (int or float): The amount that was wagered.
         spin_results (list): The symbols generated for the three reels.
         trigger (str): The current game.
-
-    Returns:
-        int or float: The updated playing balance.
     """
     symbol_counts = {}
 
@@ -97,13 +94,11 @@ def process_spin_result(playing_balance, stake, spin_results, trigger):
             match_multiplier = MATCH_MULTIPLIERS[match_count]
 
         payout = round(stake * symbol_multiplier * match_multiplier + stake, 2)
-        playing_balance = round(playing_balance + payout, 2)
+        current_user["playing_balance"] = round(current_user["playing_balance"] + payout, 2)
 
         game_result = "win"
 
     show_game_results(game_result, trigger, payout, stake)
-
-    return playing_balance
 
 
 # ==============================
@@ -179,34 +174,34 @@ De rollen beginnen te draaien. Veel geluk!
 # PROGRAM FLOW
 # ==============================
 
-def play(playing_balance) -> tuple[int | float, str]:
+def play(current_user) -> str:
     """
     Controls the slot machine game flow.
 
     Args:
-        playing_balance (int or float): The current playing balance.
+        current_user (dict): The profile of the current user.
 
     Returns:
-        tuple: The updated playing balance and the action to perform.
+        str: The action to perform.
     """
     trigger = TRIGGER
-    action, playing_balance, stake = prepare_game(playing_balance, trigger, GAME_INSTRUCTIONS)
+    action, stake = prepare_game(current_user, trigger, GAME_INSTRUCTIONS)
 
     if action in ("choose_game", "main_menu"):
-        return playing_balance, action
+        return action
 
     # Continue playing slot machine rounds until another destination is selected.
     while True:
-        action, playing_balance, stake = handle_round_setup(playing_balance, stake, action, trigger)
+        action, stake = handle_round_setup(current_user, stake, action, trigger)
 
         if action in ("choose_game", "main_menu"):
             break
 
-        playing_balance = round(playing_balance - stake, 2)
+        current_user["playing_balance"] = round(current_user["playing_balance"] - stake, 2)
         spin_results = random.choices(list(SYMBOL_MULTIPLIERS), k=3)
 
         show_spin_results(spin_results, trigger)
-        playing_balance = process_spin_result(playing_balance, stake, spin_results, trigger)
-        action, playing_balance, stake = get_round_action(playing_balance, stake, trigger)
+        process_spin_result(current_user, stake, spin_results, trigger)
+        action = get_round_action(current_user, stake, trigger)
 
-    return playing_balance, action
+    return action

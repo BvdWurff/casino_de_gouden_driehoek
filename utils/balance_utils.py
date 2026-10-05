@@ -28,17 +28,17 @@ from utils.constants import (
 # BALANCE MANAGEMENT
 # ==============================
 
-def manage_balance(playing_balance, fixed_costs=0.0, trigger="") -> tuple[int | float, str]:
+def manage_balance(current_user, fixed_costs=0.0, trigger="") -> str:
     """
     Displays the balance menu and handles deposits and withdrawals.
 
     Args:
-        playing_balance (int or float): The current playing balance.
+        current_user (dict): The profile of the current user.
         fixed_costs (int or float): The fixed casino costs.
         trigger (str): Indicates why or from where the balance menu was opened.
 
     Returns:
-        tuple: The updated playing balance and the action to perform.
+        str: The action to perform.
     """
     while True:
         clear_terminal()
@@ -46,7 +46,7 @@ def manage_balance(playing_balance, fixed_costs=0.0, trigger="") -> tuple[int | 
         print(f"""
 {CASINO_NAME} - Saldo-overzicht
 {SEPARATOR}
-Huidig saldo: {format_currency(playing_balance)}
+Huidig saldo: {format_currency(current_user["playing_balance"])}
 
 1. Saldo storten
 2. Saldo opnemen
@@ -74,7 +74,7 @@ Huidig saldo: {format_currency(playing_balance)}
                     time.sleep(1)
                     break
 
-                playing_balance = round(playing_balance + amount, 2)
+                current_user["playing_balance"] = round(current_user["playing_balance"] + amount, 2)
 
                 time.sleep(1)
                 print()
@@ -87,7 +87,7 @@ Huidig saldo: {format_currency(playing_balance)}
                 break
 
         elif menu_choice == 2:
-            if playing_balance <= 0:
+            if current_user["playing_balance"] <= 0:
                 print()
                 print("U heeft onvoldoende saldo voor deze opname.")
                 print()
@@ -113,14 +113,14 @@ Huidig saldo: {format_currency(playing_balance)}
                         time.sleep(1)
                         break
 
-                    if amount > playing_balance:
+                    if amount > current_user["playing_balance"]:
                         print()
                         print("U heeft onvoldoende saldo voor deze opname.")
                         print()
                         input(CONTINUE_PROMPT)
                         continue
 
-                    playing_balance = round(playing_balance - amount, 2)
+                    current_user["playing_balance"] = round(current_user["playing_balance"] - amount, 2)
 
                     time.sleep(1)
                     print()
@@ -135,11 +135,12 @@ Huidig saldo: {format_currency(playing_balance)}
         elif menu_choice == 0:
             # Refund fixed costs when the guest leaves due to insufficient starting balance.
             if trigger == "insufficient_starting_balance":
-                if playing_balance < 0:
-                    playing_balance = round(playing_balance + fixed_costs, 2)
+                if current_user["playing_balance"] < 0:
+                    current_user["playing_balance"] = round(current_user["playing_balance"] + fixed_costs, 2)
                     print("De vaste kosten zijn teruggestort.")
                     blank_lines(2)
-                    return playing_balance, "end_program"
+
+                    return "end_program"
 
                 print("U heeft voldoende budget voor toegang tot het casino!")
                 print(SEPARATOR)
@@ -147,8 +148,8 @@ Huidig saldo: {format_currency(playing_balance)}
                 input("Druk op Enter om verder te gaan naar het hoofdmenu.")
                 blank_lines(2)
 
-                return playing_balance, "continue"
+                return "continue"
 
             print()
 
-            return playing_balance, "continue"
+            return "continue"

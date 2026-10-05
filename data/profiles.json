@@ -7,7 +7,10 @@
         "birth_date": "26-08-1985",
         "gender": "Male",
         "playing_balance": 100.0,
-        "source": "dummy_data"
+        "source": "admin",
+        "role": "admin",
+        "delete_requested": false,
+        "played_games": {}
     },
     "bill42": {
         "password": "Monica",
@@ -17,7 +20,10 @@
         "birth_date": "19-08-1946",
         "gender": "Male",
         "playing_balance": 8000.0,
-        "source": "dummy_data"
+        "source": "dummy_data",
+        "role": "user",
+        "delete_requested": false,
+        "played_games": {}
     },
     "oprah": {
         "password": "YouGetACar",
@@ -27,7 +33,10 @@
         "birth_date": "29-01-1954",
         "gender": "Female",
         "playing_balance": 900.0,
-        "source": "dummy_data"
+        "source": "dummy_data",
+        "role": "user",
+        "delete_requested": false,
+        "played_games": {}
     },
     "neo": {
         "password": "RedPill",
@@ -37,7 +46,10 @@
         "birth_date": "02-09-1964",
         "gender": "Male",
         "playing_balance": 1111.0,
-        "source": "dummy_data"
+        "source": "dummy_data",
+        "role": "user",
+        "delete_requested": false,
+        "played_games": {}
     },
     "britneyb": {
         "password": "OopsIDidItAgain",
@@ -47,7 +59,10 @@
         "birth_date": "02-12-1981",
         "gender": "Female",
         "playing_balance": 50.0,
-        "source": "dummy_data"
+        "source": "dummy_data",
+        "role": "user",
+        "delete_requested": false,
+        "played_games": {}
     },
     "terminator": {
         "password": "IllBeBack",
@@ -57,7 +72,10 @@
         "birth_date": "30-07-1947",
         "gender": "Male",
         "playing_balance": 950000.0,
-        "source": "dummy_data"
+        "source": "dummy_data",
+        "role": "user",
+        "delete_requested": false,
+        "played_games": {}
     },
     "starboy": {
         "password": "CosmicPerspective",
@@ -67,7 +85,10 @@
         "birth_date": "05-10-1958",
         "gender": "Male",
         "playing_balance": 4200.0,
-        "source": "dummy_data"
+        "source": "dummy_data",
+        "role": "user",
+        "delete_requested": false,
+        "played_games": {}
     },
     "bart": {
         "password": "123",
@@ -77,6 +98,22 @@
         "birth_date": "26-08-1985",
         "gender": "man",
         "playing_balance": 2000.0,
-        "source": "user"
+        "source": "create_account",
+        "role": "user",
+        "delete_requested": false,
+        "played_games": {}
+    },
+    "bart86": {
+        "password": "123",
+        "first_name": "Bart",
+        "surname_prefix": "van der wurff",
+        "surname": "Wurff",
+        "birth_date": "26-08-1985",
+        "gender": "man",
+        "playing_balance": 0.0,
+        "source": "user",
+        "role": "user",
+        "delete_requested": false,
+        "played_games": {}
     }
 }

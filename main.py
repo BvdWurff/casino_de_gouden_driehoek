@@ -13,6 +13,7 @@ from utils.balance_utils import (
 from profiles import (
     login,
     create_profile,
+    show_profile,
 )
 from utils.utils import (
     blank_lines,
@@ -49,9 +50,6 @@ TEST_MODE = False
 # REGISTRATION AND ACCOUNT
 # ==============================
 
-
-
-
 def check_age(birth_date):
     """
     Checks whether the guest meets the minimum age requirement.
@@ -86,47 +84,6 @@ U bent van harte welkom vanaf {minimum_age_birthday.strftime("%d-%m-%Y")}.
     return birth_date
 
 
-def determine_salutation(first_name, surname, gender):
-    """
-    Determines the appropriate salutation for the guest.
-
-    Args:
-        first_name (str): The guest's first name.
-        surname (str): The guest's surname.
-        gender (str): The guest's gender.
-
-    Returns:
-        str: The salutation used to address the guest.
-    """
-    if gender == "man":
-        salutation = f"meneer {surname}"
-    elif gender == "vrouw":
-        salutation = f"mevrouw {surname}"
-    else:
-        salutation = f"{first_name} {surname}"
-
-    return salutation
-
-
-def calculate_age(birth_date):
-    """
-    Calculates the guest's current age.
-
-    Args:
-        birth_date (datetime.datetime): The guest's birthdate.
-
-    Returns:
-        int: The guest's current age.
-    """
-    current_date = datetime.datetime.now()
-    current_age = current_date.year - birth_date.year
-
-    if (current_date.month, current_date.day) < (birth_date.month, birth_date.day):
-        current_age -= 1
-
-    return current_age
-
-
 # ==============================
 # COSTS AND BALANCE
 # ==============================
@@ -143,22 +100,6 @@ def calculate_costs():
     fixed_costs = round(subtotal + vat_amount, 2)
 
     return vat_amount, fixed_costs
-
-
-def calculate_starting_balance(starting_balance, fixed_costs) -> int | float:
-    """
-    Calculates the playing balance after deducting the fixed casino costs.
-
-    Args:
-        starting_balance (int or float): The guest's initial budget.
-        fixed_costs (int or float): The total fixed casino costs.
-
-    Returns:
-        int or float: The initial playing balance.
-    """
-    playing_balance = starting_balance - fixed_costs
-
-    return round(playing_balance, 2)
 
 
 def determine_balance_status(playing_balance):
@@ -184,11 +125,15 @@ def determine_balance_status(playing_balance):
 def show_welcome_message():
     """
     Displays the casino welcome message.
+
+    Returns:
+        tuple: The current user, starting balance and trigger.
     """
     clear_terminal()
 
     trigger = "startpagina"
     starting_balance = 0.0
+    current_user = {}
 
     print(f"""
 {CASINO_NAME} - Startpagina
@@ -207,72 +152,41 @@ of in PyCharm “Emulate terminal in output console” in te schakelen.
 {SEPARATOR}
 """)
 
-        menu_choice = get_menu_choice(range(0,3))
+        menu_choice = get_menu_choice(range(0, 3))
 
         if menu_choice == 1:
-            current_user, starting_balance = login()
+            logged_in_user, starting_balance = login()
+
+            if logged_in_user is None:
+                continue
+
+            current_user = logged_in_user
             trigger = "login"
             break
 
         elif menu_choice == 2:
-            current_user = create_profile()
+            create_profile()
             trigger = "create_profile"
-            break
+            continue
 
         elif menu_choice == 0:
             confirmation = get_confirmation("stoppen")
 
             if confirmation:
                 blank_lines(2)
-
                 show_parting_message(trigger=trigger)
                 exit(0)
-
 
             blank_lines(2)
 
     return current_user, starting_balance, trigger
 
 
-def show_account(
-    first_name,
-    surname,
-    gender,
-    birth_date,
-    age
-):
-    """
-    Displays the guest's account information.
-
-    Args:
-        first_name (str): The guest's first name.
-        surname (str): The guest's surname.
-        gender (str): The guest's gender.
-        birth_date (datetime.datetime): The guest's birthdate.
-        age (int): The guest's current age.
-    """
-    clear_terminal()
-
-    print(f"""
-{CASINO_NAME} - Account
-{SEPARATOR}
-Naam:               {first_name} {surname}
-Geslacht:           {gender.capitalize()}
-Geboortedatum:      {birth_date.strftime("%d-%m-%Y")}
-Leeftijd:           {age}
-{SEPARATOR}
-""")
-
-    input("Druk op Enter om terug te gaan naar het hoofdmenu.")
-    blank_lines(2)
-
-
 def show_registration_summary(
-    salutation,
+    current_user,
     starting_balance,
     vat_amount,
     fixed_costs,
-    playing_balance,
     balance_status,
     balance_status_text,
     trigger,
@@ -281,21 +195,22 @@ def show_registration_summary(
     Displays the guest's registration and cost summary.
 
     Args:
-        salutation (str): The salutation used to address the guest.
+        current_user (dict): The profile of the user.
         starting_balance (int or float): The guest's initial budget.
         vat_amount (int or float): The VAT amount included in the fixed costs.
         fixed_costs (int or float): The total fixed casino costs.
-        playing_balance (int or float): The current playing balance.
         balance_status (str): The internal balance status.
         balance_status_text (str): The Dutch display text for the balance status.
-        trigger (str): location that triggered the function
+        trigger (str): Location that triggered the function.
     """
     clear_terminal()
 
     print("Welkom", end="")
+
     if trigger == "login":
         print(" terug", end="")
-    print(f""", {salutation}!
+
+    print(f""", {current_user["salutation"]}!
 
 {CASINO_NAME} - Kostenoverzicht
 {SEPARATOR}
@@ -308,7 +223,7 @@ Vaste kosten:
 - BTW ({VAT_RATE:.0f}%):        - {format_currency(vat_amount)}
 Totaal:             - {format_currency(fixed_costs)}
 
-Saldo:                {format_currency(playing_balance)}
+Saldo:                {format_currency(current_user["playing_balance"])}
 {SEPARATOR}
 U heeft {balance_status_text} budget voor toegang tot het casino.
 """)
@@ -322,13 +237,13 @@ U heeft {balance_status_text} budget voor toegang tot het casino.
     blank_lines(2)
 
 
-def show_parting_message(playing_balance=0, trigger=""):
+def show_parting_message(current_user=None, trigger=""):
     """
     Displays the checkout message and final playing balance.
 
     Args:
-        playing_balance (int or float): The guest's final playing balance.
-        trigger (str): location the function is triggered from
+        current_user (dict or None): The profile of the current user.
+        trigger (str): Location the function is triggered from.
     """
     clear_terminal()
 
@@ -337,13 +252,13 @@ def show_parting_message(playing_balance=0, trigger=""):
 {SEPARATOR}""")
 
     if trigger == "startpagina":
-        print("""U verlaat het casino.
+        print(f"""U verlaat het casino.
 Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!
 {SEPARATOR}
 """)
 
-    else:
-        print(f"""U verlaat het casino met een eindsaldo van {format_currency(playing_balance)}.
+    elif current_user is not None:
+        print(f"""U verlaat het casino met een eindsaldo van {format_currency(current_user["playing_balance"])}.
 
 Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!
 {SEPARATOR}
@@ -354,27 +269,12 @@ Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!
 # MENUS
 # ==============================
 
-def main_menu(
-    playing_balance,
-    first_name,
-    surname,
-    gender,
-    birth_date,
-    age
-) -> int | float:
+def main_menu(current_user):
     """
     Displays the main menu and handles the selected menu options.
 
     Args:
-        playing_balance (int or float): The current playing balance.
-        first_name (str): The guest's first name.
-        surname (str): The guest's surname.
-        gender (str): The guest's gender.
-        birth_date (datetime.datetime): The guest's birthdate.
-        age (int): The guest's current age.
-
-    Returns:
-        int or float: The updated playing balance.
+        current_user (dict): The profile of the user.
     """
     while True:
         clear_terminal()
@@ -384,37 +284,31 @@ def main_menu(
 {SEPARATOR}
 1. Spellen
 2. Saldo
-3. Account
+3. Profiel
 0. Stoppen
 {SEPARATOR}""")
 
         menu_choice = get_menu_choice(range(0, 4))
 
         if menu_choice == 1:
-            if playing_balance <= 0:
+            if current_user["playing_balance"] <= 0:
                 print()
                 print("U heeft onvoldoende saldo om te spelen.")
                 blank_lines(2)
 
-                playing_balance, _ = manage_balance(playing_balance)
+                manage_balance(current_user)
 
             else:
                 blank_lines(2)
-                playing_balance = choose_game(playing_balance)
+                choose_game(current_user)
 
         elif menu_choice == 2:
             blank_lines(2)
-            playing_balance, _ = manage_balance(playing_balance)
+            manage_balance(current_user)
 
         elif menu_choice == 3:
             blank_lines(2)
-            show_account(
-                first_name,
-                surname,
-                gender,
-                birth_date,
-                age
-            )
+            show_profile(current_user)
 
         elif menu_choice == 0:
             confirmation = get_confirmation("stoppen")
@@ -424,8 +318,6 @@ def main_menu(
                 break
 
             blank_lines(2)
-
-    return playing_balance
 
 
 # ==============================
@@ -438,26 +330,15 @@ def main():
     """
     current_user, starting_balance, trigger = show_welcome_message()
 
-    birth_date = datetime.datetime.strptime(current_user["birth_date"], "%d-%m-%Y")
-    birth_date = check_age(birth_date)
-    salutation = determine_salutation(
-        current_user["first_name"],
-        current_user["surname"],
-        current_user["gender"]
-    )
-    age = calculate_age(birth_date)
-
     vat_amount, fixed_costs = calculate_costs()
-    playing_balance = calculate_starting_balance(starting_balance, fixed_costs)
-    current_user.update(playing_balance = playing_balance)
+    current_user["playing_balance"] = round(starting_balance - fixed_costs, 2)
     balance_status, balance_status_text = determine_balance_status(current_user["playing_balance"])
 
     show_registration_summary(
-        salutation,
+        current_user,
         starting_balance,
         vat_amount,
         fixed_costs,
-        current_user["playing_balance"],
         balance_status,
         balance_status_text,
         trigger,
@@ -465,30 +346,19 @@ def main():
 
     while True:
         if balance_status == "sufficient":
-            playing_balance = main_menu(
-                current_user["playing_balance"],
-                current_user["first_name"],
-                current_user["surname"],
-                current_user["gender"],
-                birth_date,
-                age
-            )
+            main_menu(current_user)
             break
 
         trigger = "insufficient_starting_balance"
 
-        playing_balance, action = manage_balance(
-            current_user["playing_balance"],
-            fixed_costs=fixed_costs,
-            trigger=trigger
-        )
+        action = manage_balance(current_user, fixed_costs=fixed_costs, trigger=trigger)
 
         if action == "end_program":
             break
 
-        balance_status, _ = determine_balance_status(playing_balance)
+        balance_status, _ = determine_balance_status(current_user["playing_balance"])
 
-    show_parting_message(playing_balance)
+    show_parting_message(current_user)
     exit(0)
 
 

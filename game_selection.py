@@ -39,15 +39,12 @@ AVAILABLE_GAMES = {
 # PROGRAM FLOW
 # ==============================
 
-def choose_game(playing_balance) -> int | float:
+def choose_game(current_user):
     """
     Displays the available games, starts the selected game and handles navigation.
 
     Args:
-        playing_balance (int or float): The current playing balance.
-
-    Returns:
-        int or float: The updated playing balance when returning to the main menu.
+        current_user (dict): The profile of the current user.
     """
     while True:
         clear_terminal()
@@ -70,12 +67,10 @@ def choose_game(playing_balance) -> int | float:
             break
 
         _, game_module = AVAILABLE_GAMES[menu_choice]
-        playing_balance, action = game_module.play(playing_balance)
+        action = game_module.play(current_user)
 
         if action == "main_menu":
             blank_lines(2)
             break
 
         # The "choose_game" action returns naturally to the game selection menu.
-
-    return playing_balance
