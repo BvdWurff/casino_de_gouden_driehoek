@@ -5,7 +5,6 @@ import datetime
 from utils.utils import (
     clear_terminal,
     get_menu_choice,
-    blank_lines,
     print_message,
     format_currency,
 )
@@ -17,6 +16,11 @@ from utils.constants import (
     SEPARATOR,
     GREEN,
     RED,
+    ADMISSION_PRICE,
+    SERVICE_FEE,
+    MANDATORY_DRINK_PRICE,
+    VAT_RATE,
+    MIN_AGE
 )
 
 
@@ -28,12 +32,36 @@ def load_profiles():
     pass
 
 
-def save_profiles(profiles):
+def save_profiles(current_user):
+
+    persistent_fields = {
+        "password",
+        "first_name",
+        "surname_prefix",
+        "surname",
+        "birth_date",
+        "gender",
+        "playing_balance",
+        "source",
+        "role",
+        "delete_requested",
+        "visits",
+        "played_games"
+    }
+
+    username = current_user["username"]
+
+    if username not in profiles:
+        profiles[username] = {}
+
+    for field in persistent_fields:
+        profiles[username][field] = current_user[field]
+
     with open("data/profiles.json", "w") as file:
         json.dump(profiles, file, indent=4)
 
 
-def login():
+def login(current_user):
     """
     Logs in to a user profile.
 
@@ -90,7 +118,12 @@ def login():
                 print_message("Ongeldig wachtwoord", RED)
 
         if username and password:
-            print_message("U bent succesvol ingelogd.", GREEN)
+            if len(current_user) == 0:
+                print_message("U bent succesvol ingelogd.", GREEN)
+            else:
+                save_profiles(current_user)
+                print_message("U bent succesvol van profiel gewisseld.", GREEN)
+
             input(CONTINUE_PROMPT)
             break
 
@@ -98,7 +131,7 @@ def login():
             print(f"""{SEPARATOR}
 1. Nogmaals proberen
 2. Account aanmaken
-0. Terug naar Welkomstpagina
+0. Terug
 {SEPARATOR}""")
 
             menu_choice = get_menu_choice(range(0, 3))
@@ -115,6 +148,9 @@ def login():
 
     current_user = build_player_profile(profile, username)
     starting_balance = current_user["playing_balance"]
+    current_user["visits"] += 1
+
+    show_welcome_message(current_user)
 
     return current_user, starting_balance
 
@@ -135,7 +171,7 @@ def create_profile():
 {CASINO_NAME} - Registreren
 {SEPARATOR}
 
-Vul onderstaande gegevens in om een account aan te maken.
+Vul onderstaande gegevens in om een profiel aan te maken.
 
 {SEPARATOR}
 """)
@@ -231,9 +267,9 @@ Vul onderstaande gegevens in om een account aan te maken.
         print(INVALID_INPUT)
 
     print(SEPARATOR)
-    print()
 
-    profiles[username] = {
+    current_user = {
+        "username": username,
         "password": password,
         "first_name": first_name,
         "surname_prefix": surname_prefix,
@@ -243,18 +279,22 @@ Vul onderstaande gegevens in om een account aan te maken.
         "playing_balance": starting_balance,
         "source": "user",
         "role": "user",
-        "delete_requested": False
+        "delete_requested": False,
+        "visits": 0,
+        "played_games": {}
     }
 
-    save_profiles(profiles)
+    birth_date = datetime.datetime.strptime(birth_date_input, "%d-%m-%Y")
+    check_age(birth_date)
+
+    save_profiles(current_user)
 
     print_message("Account succesvol aangemaakt.", GREEN)
+
     input(CONTINUE_PROMPT)
 
-    return profiles[username], username
 
-
-def delete_profile(profiles):
+def delete_profile():
     deleted_profiles = []
 
     for profile in list(profiles):
@@ -296,7 +336,7 @@ Saldo:              {format_currency(current_user["playing_balance"])}
 {SEPARATOR}
 """)
 
-    input("Druk op Enter om terug te gaan naar het hoofdmenu.")
+    input(CONTINUE_PROMPT)
 
 
 def show_all_profiles():
@@ -386,3 +426,139 @@ def determine_full_surname(surname_prefix, surname):
         full_surname += surname.capitalize()
 
     return full_surname
+
+
+def show_registration_summary(
+    current_user,
+    starting_balance,
+    vat_amount,
+    fixed_costs,
+    balance_status,
+    balance_status_text,
+):
+    """
+    Displays the guest's registration and cost summary.
+
+    Args:
+        current_user (dict): The profile of the user.
+        starting_balance (int or float): The guest's initial budget.
+        vat_amount (int or float): The VAT amount included in the fixed costs.
+        fixed_costs (int or float): The total fixed casino costs.
+        balance_status (str): The internal balance status.
+        balance_status_text (str): The Dutch display text for the balance status.
+    """
+    clear_terminal()
+    print(f"""
+{CASINO_NAME} - Welkomstpagina
+{SEPARATOR}
+Welkom, {current_user["salutation"]}!
+
+{CASINO_NAME} - Kostenoverzicht
+{SEPARATOR}
+Speelbudget:          {format_currency(starting_balance)}
+
+Vaste kosten:
+- Toegangskosten:   - {format_currency(ADMISSION_PRICE)}
+- Servicekosten:    - {format_currency(SERVICE_FEE)}
+- Consumptie:       - {format_currency(MANDATORY_DRINK_PRICE)}
+- BTW ({VAT_RATE:.0f}%):        - {format_currency(vat_amount)}
+Totaal:             - {format_currency(fixed_costs)}
+
+Saldo:                {format_currency(current_user["playing_balance"])}
+{SEPARATOR}
+U heeft {balance_status_text} budget voor toegang tot het casino.
+""")
+
+    if balance_status == "insufficient":
+        destination = "het saldo-overzicht"
+    else:
+        destination = "de lobby"
+
+    input(f"Druk op Enter om door te gaan naar {destination}.")
+
+
+def show_welcome_message(current_user):
+    clear_terminal()
+    print(f"""
+{CASINO_NAME} - Welkomstpagina
+{SEPARATOR}
+Welkom terug, {current_user["salutation"]}!
+
+Uw huidige saldo is {format_currency(current_user["playing_balance"])}.
+{SEPARATOR}
+""")
+    input(CONTINUE_PROMPT)
+
+
+def show_profile_menu(current_user):
+    while True:
+        clear_terminal()
+
+        print(f"""
+{CASINO_NAME} - Profielbeheer
+{SEPARATOR}
+1. Mijn profiel
+2. Nieuw profiel aanmaken
+3. Profiel verwijderen
+4. Van profiel wisselen
+5. Alle profielen inzien
+
+0. Terug
+{SEPARATOR}""")
+
+        menu_choice = get_menu_choice(range(0, 6))
+
+        if menu_choice == 1:
+            show_profile(current_user)
+            continue
+
+        if menu_choice == 2:
+            create_profile()
+            continue
+
+        if menu_choice == 4:
+            login(current_user)
+            break
+    return
+
+
+
+def check_age(birth_date):
+    """
+    Checks whether the guest meets the minimum age requirement.
+
+    Args:
+        birth_date (datetime.datetime): The guest's birthdate.
+
+    Returns:
+        datetime.datetime: The birthdate if the age requirement is met.
+    """
+
+    current_date = datetime.datetime.now()
+    minimum_age_year = birth_date.year + MIN_AGE
+
+    # A February 29 birthdate may not exist in the year the minimum age is reached.
+    # In that case, February 28 is used as the minimum-age birthday.
+    if birth_date.day == 29 and birth_date.month == 2:
+        minimum_age_birthday = datetime.datetime(minimum_age_year, 2, 28)
+    else:
+        minimum_age_birthday = birth_date.replace(year=minimum_age_year)
+
+    if current_date < minimum_age_birthday:
+        clear_terminal()
+
+        print(f"""
+{CASINO_NAME} - Vertrek
+{SEPARATOR}
+De minimale leeftijd voor {CASINO_NAME} is {MIN_AGE} jaar.
+U heeft deze leeftijd nog niet bereikt.
+
+U bent van harte welkom vanaf {minimum_age_birthday.strftime("%d-%m-%Y")}.
+{SEPARATOR}
+""")
+        input("Druk op Enter om het casino te verlaten.")
+        print()
+
+        exit(1)
+
+    return

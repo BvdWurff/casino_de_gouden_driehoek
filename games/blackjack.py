@@ -10,6 +10,7 @@ from utils.game_utils import (
     handle_round_setup,
     prepare_game,
     show_game_results,
+    update_game_stats
 )
 from utils.utils import (
     clear_terminal,
@@ -40,7 +41,7 @@ from utils.constants import (
 # CONFIGURATION
 # ==============================
 
-TRIGGER = "blackjack"
+NAME_GAME = "blackjack"
 DECKS_IN_SHOE = 6
 
 GAME_INSTRUCTIONS = f"""Het doel van blackjack is om met uw kaarten zo dicht mogelijk bij 21 punten te komen zonder daar overheen te gaan.
@@ -220,7 +221,7 @@ def determine_game_result(player_status, player_hand_value, dealer_status, deale
         str: The blackjack round result.
     """
     if player_status in ("bust", "dealer_blackjack"):
-        return "lose"
+        return "lost"
 
     if "," in player_hand_value:
         player_hand_value = player_hand_value[-2:]
@@ -232,7 +233,7 @@ def determine_game_result(player_status, player_hand_value, dealer_status, deale
 
     dealer_hand_value = int(dealer_hand_value)
 
-    game_result = "lose"
+    game_result = "lost"
 
     if player_status == "blackjack":
         if dealer_status == "blackjack":
@@ -242,18 +243,18 @@ def determine_game_result(player_status, player_hand_value, dealer_status, deale
 
     elif player_status == "stand":
         if dealer_status == "bust":
-            game_result = "win"
+            game_result = "won"
 
         elif dealer_status == "stand":
             if player_hand_value > dealer_hand_value:
-                game_result = "win"
+                game_result = "won"
             elif player_hand_value == dealer_hand_value:
                 game_result = "push"
 
     return game_result
 
 
-def process_payout(game_result, current_user, stake, trigger):
+def process_payout(game_result, current_user, stake, game):
     """
     Calculates the blackjack payout and updates the playing balance.
 
@@ -261,12 +262,12 @@ def process_payout(game_result, current_user, stake, trigger):
         game_result (str): The result of the blackjack round.
         current_user (dict): The profile of the current user.
         stake (int or float): The amount that was wagered.
-        trigger (str): The current game.
+        game (str): The current game.
     """
     match game_result:
         case "blackjack":
             payout_multiplier = BLACKJACK_MULTIPLIER
-        case "win":
+        case "won":
             payout_multiplier = BLACKJACK_WIN_MULTIPLIER
         case "push":
             payout_multiplier = BLACKJACK_PUSH_MULTIPLIER
@@ -276,14 +277,14 @@ def process_payout(game_result, current_user, stake, trigger):
     payout = round(stake * payout_multiplier, 2)
     current_user["playing_balance"] = round(current_user["playing_balance"] + payout, 2)
 
-    if game_result in ("blackjack", "win"):
-        display_result = "win"
+    if game_result in ("blackjack", "won"):
+        display_result = "won"
     elif game_result == "push":
         display_result = "draw"
     else:
-        display_result = "lose"
+        display_result = "lost"
 
-    show_game_results(display_result, trigger, payout, stake)
+    show_game_results(current_user, display_result, game, payout, stake)
 
 
 # ==============================
@@ -321,14 +322,14 @@ def format_hand(hand):
     return formatted_hand
 
 
-def prepare_play_hand(player_hand, dealer_hand, trigger, actor):
+def prepare_play_hand(player_hand, dealer_hand, game, actor):
     """
     Calculates and displays the current blackjack hands and hand values.
 
     Args:
         player_hand (list): The player's current hand.
         dealer_hand (list): The dealer's current hand.
-        trigger (str): The current game.
+        game (str): The current game.
         actor (str): The player or dealer whose turn is active.
 
     Returns:
@@ -345,7 +346,7 @@ def prepare_play_hand(player_hand, dealer_hand, trigger, actor):
         player_hand_values_text = "handwaarde is:"
 
     print(f"""
-{trigger.capitalize()} - Spelopties
+{game.capitalize()} - Spelopties
 {SEPARATOR}
 Huidige handen:""")
 
@@ -378,19 +379,19 @@ Speler {player_hand_values_text} {player_hand_values}
     )
 
 
-def show_initial_deal(player_hand, dealer_hand, trigger):
+def show_initial_deal(player_hand, dealer_hand, game):
     """
     Displays the initial blackjack deal.
 
     Args:
         player_hand (list): The player's initial hand.
         dealer_hand (list): The dealer's initial hand.
-        trigger (str): The current game.
+        game (str): The current game.
     """
     clear_terminal()
 
     print(f"""
-{trigger.capitalize()} - Speelronde
+{game.capitalize()} - Speelronde
 {SEPARATOR}
 """)
 
@@ -414,7 +415,7 @@ def show_initial_deal(player_hand, dealer_hand, trigger):
 # BLACKJACK GAMEPLAY
 # ==============================
 
-def play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, trigger):
+def play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game):
     """
     Controls the player's blackjack turn.
 
@@ -423,7 +424,7 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, trigge
         cards_until_shuffle (int): The number of cards remaining before shuffling.
         player_hand (list): The player's current hand.
         dealer_hand (list): The dealer's current hand.
-        trigger (str): The current game.
+        game (str): The current game.
 
     Returns:
         tuple: The updated shoe, cards until shuffle, player hand,
@@ -440,7 +441,7 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, trigge
             player_hand_values,
             player_hand_values_text,
             player_status,
-        ) = prepare_play_hand(player_hand, dealer_hand, trigger, actor)
+        ) = prepare_play_hand(player_hand, dealer_hand, game, actor)
 
         if player_status == "bust":
             print(f"U heeft {int(player_hand_values)}. Player bust!")
@@ -544,7 +545,7 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, trigge
     return shoe, cards_until_shuffle, player_hand, player_hand_values, player_status
 
 
-def play_dealer_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, trigger):
+def play_dealer_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game):
     """
     Controls the dealer's blackjack turn.
 
@@ -553,7 +554,7 @@ def play_dealer_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, trigge
         cards_until_shuffle (int): The number of cards remaining before shuffling.
         player_hand (list): The player's final hand.
         dealer_hand (list): The dealer's current hand.
-        trigger (str): The current game.
+        game (str): The current game.
 
     Returns:
         tuple: The updated shoe, cards until shuffle, dealer status
@@ -564,7 +565,7 @@ def play_dealer_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, trigge
     clear_terminal()
 
     print(f"""
-{trigger.capitalize()} - Spelopties
+{game.capitalize()} - Spelopties
 {SEPARATOR}
 De dealer onthult de gesloten kaart: {format_hand([dealer_hand[1]])}
 {SEPARATOR}
@@ -580,7 +581,7 @@ De dealer onthult de gesloten kaart: {format_hand([dealer_hand[1]])}
             player_hand_values,
             player_hand_values_text,
             player_status,
-        ) = prepare_play_hand(player_hand, dealer_hand, trigger, actor)
+        ) = prepare_play_hand(player_hand, dealer_hand, game, actor)
 
         if player_status == "blackjack":
             if dealer_status == "blackjack":
@@ -644,17 +645,19 @@ def play(current_user) -> str:
     Returns:
         str: The action to perform.
     """
-    trigger = TRIGGER
+    game = NAME_GAME
 
     shoe, cards_until_shuffle = get_new_shoe()
-    action, stake = prepare_game(current_user, trigger, GAME_INSTRUCTIONS)
+    action, stake = prepare_game(current_user, game, GAME_INSTRUCTIONS)
 
     if action in ("choose_game", "main_menu"):
         return action
 
+    update_game_stats(current_user, game, "game_started")
+
     # Continue playing blackjack hands until another destination is selected.
     while True:
-        action, stake = handle_round_setup(current_user, stake, action, trigger)
+        action, stake = handle_round_setup(current_user, stake, action, game)
 
         if action in ("choose_game", "main_menu"):
             break
@@ -665,7 +668,7 @@ def play(current_user) -> str:
             shoe, cards_until_shuffle = get_new_shoe()
 
         shoe, cards_until_shuffle, dealer_hand, player_hand = deal_cards(shoe, cards_until_shuffle)
-        show_initial_deal(player_hand, dealer_hand, trigger)
+        show_initial_deal(player_hand, dealer_hand, game)
 
         (
             shoe,
@@ -673,7 +676,7 @@ def play(current_user) -> str:
             player_hand,
             player_hand_value,
             player_status,
-        ) = play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, trigger)
+        ) = play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game)
 
         if player_status == "bust":
             dealer_status = "stand"
@@ -689,7 +692,7 @@ def play(current_user) -> str:
                 cards_until_shuffle,
                 dealer_status,
                 dealer_hand_value,
-            ) = play_dealer_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, trigger)
+            ) = play_dealer_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game)
 
         game_result = determine_game_result(
             player_status,
@@ -698,7 +701,7 @@ def play(current_user) -> str:
             dealer_hand_value
         )
 
-        process_payout(game_result, current_user, stake, trigger)
-        action = get_round_action(current_user, stake, trigger)
+        process_payout(game_result, current_user, stake, game)
+        action = get_round_action(current_user, stake, game)
 
     return action

@@ -21,6 +21,10 @@ from utils.constants import (
     CONTINUE_PROMPT,
     INVALID_INPUT,
     SEPARATOR,
+    ADMISSION_PRICE,
+    SERVICE_FEE,
+    MANDATORY_DRINK_PRICE,
+    VAT_RATE,
 )
 
 
@@ -153,3 +157,33 @@ Huidig saldo: {format_currency(current_user["playing_balance"])}
             print()
 
             return "continue"
+
+
+def calculate_costs():
+    """
+    Calculates the VAT amount and total fixed casino costs.
+
+    Returns:
+        tuple: The VAT amount and total fixed costs.
+    """
+    subtotal = ADMISSION_PRICE + SERVICE_FEE + MANDATORY_DRINK_PRICE
+    vat_amount = round(subtotal * (VAT_RATE / 100), 2)
+    fixed_costs = round(subtotal + vat_amount, 2)
+
+    return vat_amount, fixed_costs
+
+
+def determine_balance_status(current_user):
+    """
+    Determines whether the playing balance is sufficient.
+
+    Args:
+        playing_balance (int or float): The current playing balance.
+
+    Returns:
+        tuple: The internal balance status and its Dutch display text.
+    """
+    if current_user["playing_balance"] >= 0:
+        return "sufficient", "voldoende"
+
+    return "insufficient", "onvoldoende"

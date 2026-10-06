@@ -10,6 +10,7 @@ from utils.game_utils import (
     handle_round_setup,
     prepare_game,
     show_game_results,
+    update_game_stats,
 )
 from utils.utils import (
     clear_terminal,
@@ -32,7 +33,7 @@ from utils.constants import (
 # CONFIGURATION
 # ==============================
 
-TRIGGER = "fruitmachine"
+NAME_GAME = "fruitmachine"
 
 GAME_INSTRUCTIONS = f"""Het doel van de fruitmachine is om zoveel mogelijk gelijke symbolen te draaien.
 Bepaal uw inzet en haal daarna de hendel over.
@@ -55,7 +56,7 @@ Uitbetaling:
 # SLOT MACHINE GAME LOGIC
 # ==============================
 
-def process_spin_result(current_user, stake, spin_results, trigger):
+def process_spin_result(current_user, stake, spin_results, game):
     """
     Processes the slot machine result, payout and updated playing balance.
 
@@ -63,7 +64,7 @@ def process_spin_result(current_user, stake, spin_results, trigger):
         current_user (dict): The profile of the current user.
         stake (int or float): The amount that was wagered.
         spin_results (list): The symbols generated for the three reels.
-        trigger (str): The current game.
+        game (str): The current game.
     """
     symbol_counts = {}
 
@@ -82,7 +83,7 @@ def process_spin_result(current_user, stake, spin_results, trigger):
             match_count = value
 
     if match_count == 1:
-        game_result = "lose"
+        game_result = "lost"
         payout = 0
 
     else:
@@ -96,9 +97,9 @@ def process_spin_result(current_user, stake, spin_results, trigger):
         payout = round(stake * symbol_multiplier * match_multiplier + stake, 2)
         current_user["playing_balance"] = round(current_user["playing_balance"] + payout, 2)
 
-        game_result = "win"
+        game_result = "won"
 
-    show_game_results(game_result, trigger, payout, stake)
+    show_game_results(current_user,game_result, game, payout, stake)
 
 
 # ==============================
@@ -126,13 +127,13 @@ def get_symbol(symbol):
             return symbol
 
 
-def show_spin_results(spin_results, trigger):
+def show_spin_results(spin_results, game):
     """
     Displays the slot machine spin and its results.
 
     Args:
         spin_results (list): The symbols generated for the three reels.
-        trigger (str): The current game.
+        game (str): The current game.
     """
     clear_terminal()
 
@@ -141,7 +142,7 @@ def show_spin_results(spin_results, trigger):
     symbol_3 = get_symbol(spin_results[2])
 
     print(f"""
-{trigger.capitalize()} - Speelronde
+{game.capitalize()} - Speelronde
 {SEPARATOR}""")
 
     input("Druk op Enter om de hendel over te halen.")
@@ -184,15 +185,17 @@ def play(current_user) -> str:
     Returns:
         str: The action to perform.
     """
-    trigger = TRIGGER
-    action, stake = prepare_game(current_user, trigger, GAME_INSTRUCTIONS)
+    game = NAME_GAME
+    action, stake = prepare_game(current_user, game, GAME_INSTRUCTIONS)
 
     if action in ("choose_game", "main_menu"):
         return action
 
+    update_game_stats(current_user, game, "game_started")
+
     # Continue playing slot machine rounds until another destination is selected.
     while True:
-        action, stake = handle_round_setup(current_user, stake, action, trigger)
+        action, stake = handle_round_setup(current_user, stake, action, game)
 
         if action in ("choose_game", "main_menu"):
             break
@@ -200,8 +203,8 @@ def play(current_user) -> str:
         current_user["playing_balance"] = round(current_user["playing_balance"] - stake, 2)
         spin_results = random.choices(list(SYMBOL_MULTIPLIERS), k=3)
 
-        show_spin_results(spin_results, trigger)
-        process_spin_result(current_user, stake, spin_results, trigger)
-        action = get_round_action(current_user, stake, trigger)
+        show_spin_results(spin_results, game)
+        process_spin_result(current_user, stake, spin_results, game)
+        action = get_round_action(current_user, stake, game)
 
     return action

@@ -10,6 +10,7 @@
         "source": "admin",
         "role": "admin",
         "delete_requested": false,
+        "visits": 0,
         "played_games": {}
     },
     "bill42": {
@@ -23,6 +24,7 @@
         "source": "dummy_data",
         "role": "user",
         "delete_requested": false,
+        "visits": 0,
         "played_games": {}
     },
     "oprah": {
@@ -36,6 +38,7 @@
         "source": "dummy_data",
         "role": "user",
         "delete_requested": false,
+        "visits": 0,
         "played_games": {}
     },
     "neo": {
@@ -49,6 +52,7 @@
         "source": "dummy_data",
         "role": "user",
         "delete_requested": false,
+        "visits": 0,
         "played_games": {}
     },
     "britneyb": {
@@ -62,6 +66,7 @@
         "source": "dummy_data",
         "role": "user",
         "delete_requested": false,
+        "visits": 0,
         "played_games": {}
     },
     "terminator": {
@@ -75,6 +80,7 @@
         "source": "dummy_data",
         "role": "user",
         "delete_requested": false,
+        "visits": 0,
         "played_games": {}
     },
     "starboy": {
@@ -88,6 +94,7 @@
         "source": "dummy_data",
         "role": "user",
         "delete_requested": false,
+        "visits": 0,
         "played_games": {}
     },
     "bart": {
@@ -97,23 +104,42 @@
         "surname": "Wurff",
         "birth_date": "26-08-1985",
         "gender": "man",
-        "playing_balance": 2000.0,
+        "playing_balance": 2350.0,
         "source": "create_account",
         "role": "user",
         "delete_requested": false,
-        "played_games": {}
-    },
-    "bart86": {
-        "password": "123",
-        "first_name": "Bart",
-        "surname_prefix": "van der wurff",
-        "surname": "Wurff",
-        "birth_date": "26-08-1985",
-        "gender": "man",
-        "playing_balance": 0.0,
-        "source": "user",
-        "role": "user",
-        "delete_requested": false,
-        "played_games": {}
+        "visits": 7,
+        "played_games": {
+            "roulettetafel": {
+                "games_played": 1,
+                "rounds_played": 0,
+                "results": {
+                    "won": 3,
+                    "lost": 1
+                }
+            },
+            "fruitmachine": {
+                "games_played": 1,
+                "rounds_played": 0,
+                "results": {
+                    "won": 9,
+                    "lost": 1
+                }
+            },
+            "blackjack": {
+                "games_played": 1,
+                "rounds_played": 0,
+                "results": {
+                    "won": 3,
+                    "lost": 4,
+                    "draw": 1
+                }
+            }
+        },
+        "username": "bart",
+        "age": 41,
+        "full_surname": "Van der Wurff",
+        "full_name": "Bart van der Wurff",
+        "salutation": "meneer Van der Wurff"
     }
 }

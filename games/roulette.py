@@ -11,6 +11,7 @@ from utils.game_utils import (
     prepare_game,
     resolve_insufficient_balance,
     show_game_results,
+    update_game_stats,
 )
 
 from utils.utils import (
@@ -41,7 +42,7 @@ from utils.constants import (
 # CONFIGURATION
 # ==============================
 
-TRIGGER = "roulettetafel"
+NAME_GAME = "roulettetafel"
 MAX_RECENT_RESULTS = 10
 
 GAME_INSTRUCTIONS = """Het doel van roulette is om te voorspellen waar het balletje zal landen.
@@ -113,14 +114,14 @@ def get_bet_choice_text(bet_choice):
 
 def get_bet_choice(
     recent_results,
-    trigger
+    game
 ):
     """
     Displays the available roulette bets and requests the player's choice.
 
     Args:
         recent_results (list): The stored recent roulette results.
-        trigger (str): The current game.
+        game (str): The current game.
 
     Returns:
         tuple: The action, selected bet and optional roulette number.
@@ -129,7 +130,7 @@ def get_bet_choice(
         clear_terminal()
 
         print(f"""
-{trigger.capitalize()} - Inzetmogelijkheden
+{game.capitalize()} - Inzetmogelijkheden
 {SEPARATOR}""")
 
         if recent_results:
@@ -157,7 +158,7 @@ def get_bet_choice(
 
         elif bet_choice == 0:
             blank_lines(2)
-            action = get_game_action(trigger)
+            action = get_game_action(game)
 
             # A valid bet still needs to be selected when the game is resumed.
             if action == "continue":
@@ -174,7 +175,7 @@ def change_bet(
     bet_choice,
     selected_number,
     recent_results,
-    trigger
+    game
 ):
     """
     Changes the current roulette bet and handles a stake-change action when requested.
@@ -185,7 +186,7 @@ def change_bet(
         bet_choice (int): The current roulette bet.
         selected_number (int or None): The current roulette number.
         recent_results (list): The stored recent roulette results.
-        trigger (str): The current game.
+        game (str): The current game.
 
     Returns:
         tuple: The action, stake, bet choice and selected roulette number.
@@ -195,19 +196,19 @@ def change_bet(
 
     action, bet_choice, selected_number = get_bet_choice(
         recent_results,
-        trigger
+        game
     )
 
     if action == "change_stake":
         # Keep the previous bet when only the stake is changed.
         bet_choice = previous_bet_choice
         selected_number = previous_selected_number
-        action, stake = get_stake(current_user, stake, trigger)
+        action, stake = get_stake(current_user, stake, game)
 
     return action, stake, bet_choice, selected_number
 
 
-def confirm_bet(current_user, stake, bet_choice, selected_number, recent_results, trigger):
+def confirm_bet(current_user, stake, bet_choice, selected_number, recent_results, game):
     """
     Displays the current bet and allows the player to confirm or modify it.
 
@@ -217,7 +218,7 @@ def confirm_bet(current_user, stake, bet_choice, selected_number, recent_results
         bet_choice (int): The selected roulette bet.
         selected_number (int or None): The selected roulette number.
         recent_results (list): The stored recent roulette results.
-        trigger (str): The current game.
+        game (str): The current game.
 
     Returns:
         tuple: The action, stake, bet choice and selected roulette number.
@@ -227,7 +228,7 @@ def confirm_bet(current_user, stake, bet_choice, selected_number, recent_results
         bet_choice_text = get_bet_choice_text(bet_choice)
 
         print(f"""
-{trigger.capitalize()} - Spelopties
+{game.capitalize()} - Spelopties
 {SEPARATOR}
 Huidige inzet:
 Inzet:      {format_currency(stake)}
@@ -265,7 +266,7 @@ Wat wilt u doen?
 
         if menu_choice == 0:
             blank_lines(2)
-            action = get_game_action(trigger)
+            action = get_game_action(game)
 
             if action == "continue":
                 continue
@@ -284,7 +285,7 @@ Wat wilt u doen?
                 bet_choice,
                 selected_number,
                 recent_results,
-                trigger
+                game
             )
 
             if action == "continue":
@@ -294,7 +295,7 @@ Wat wilt u doen?
 
         if menu_choice == 3:
             print()
-            action, stake = get_stake(current_user, stake, trigger)
+            action, stake = get_stake(current_user, stake, game)
 
             if action == "continue":
                 continue
@@ -302,7 +303,7 @@ Wat wilt u doen?
             return action, stake, bet_choice, selected_number
 
         # Menu option 4 changes the stake first and then the roulette bet.
-        action, stake = get_stake(current_user, stake, trigger)
+        action, stake = get_stake(current_user, stake, game)
 
         if action in ("choose_game", "main_menu"):
             return action, stake, bet_choice, selected_number
@@ -313,7 +314,7 @@ Wat wilt u doen?
             bet_choice,
             selected_number,
             recent_results,
-            trigger
+            game
         )
 
         if action == "continue":
@@ -367,7 +368,7 @@ def process_spin_result(
     spin_result,
     color,
     parity,
-    trigger
+    game
 ):
     """
     Processes the roulette result, payout and updated playing balance.
@@ -380,33 +381,33 @@ def process_spin_result(
         spin_result (int): The roulette number that was rolled.
         color (str): The color of the roulette result.
         parity (str): The parity of the roulette result.
-        trigger (str): The current game.
+        game (str): The current game.
     """
     payout_multiplier = 2
     payout = 0
 
     if bet_choice == 1 and color == "rood":
-        game_result = "win"
+        game_result = "won"
     elif bet_choice == 2 and color == "zwart":
-        game_result = "win"
+        game_result = "won"
     elif bet_choice == 3 and color == "groen":
-        game_result = "win"
+        game_result = "won"
         payout_multiplier = 36
     elif bet_choice == 4 and parity == "even":
-        game_result = "win"
+        game_result = "won"
     elif bet_choice == 5 and parity == "oneven":
-        game_result = "win"
+        game_result = "won"
     elif bet_choice == 6 and selected_number == spin_result:
-        game_result = "win"
+        game_result = "won"
         payout_multiplier = 36
     else:
-        game_result = "lose"
+        game_result = "lost"
 
-    if game_result == "win":
+    if game_result == "won":
         payout = round(stake * payout_multiplier, 2)
         current_user["playing_balance"] = round(current_user["playing_balance"] + payout, 2)
 
-    show_game_results(game_result, trigger, payout, stake)
+    show_game_results(current_user, game_result, game, payout, stake)
 
 
 def add_recent_result(recent_results, spin_result, color):
@@ -470,20 +471,20 @@ def format_recent_results(recent_results):
     return formatted_results
 
 
-def show_spin_result(spin_result, color, trigger):
+def show_spin_result(spin_result, color, game):
     """
     Displays the roulette spin and its result.
 
     Args:
         spin_result (int): The roulette number that was rolled.
         color (str): The color of the roulette result.
-        trigger (str): The current game.
+        game (str): The current game.
     """
     clear_terminal()
     font_color = get_font_color(color)
 
     print(f"""
-{trigger.capitalize()} - Speelronde
+{game.capitalize()} - Speelronde
 {SEPARATOR}
 """)
 
@@ -523,20 +524,17 @@ def play(current_user) -> str:
     Returns:
         str: The action to perform.
     """
-    trigger = TRIGGER
-    action, stake = prepare_game(current_user, trigger, GAME_INSTRUCTIONS)
+    game = NAME_GAME
+    action, stake = prepare_game(current_user, game, GAME_INSTRUCTIONS)
 
     if action in ("choose_game", "main_menu"):
         return action
 
     while True:
-        action, bet_choice, selected_number = get_bet_choice(
-            roulette_history,
-            trigger
-        )
+        action, bet_choice, selected_number = get_bet_choice(roulette_history, game)
 
         if action == "change_stake":
-            action, stake = get_stake(current_user, stake, trigger)
+            action, stake = get_stake(current_user, stake, game)
 
             if action in ("choose_game", "main_menu"):
                 return action
@@ -548,6 +546,8 @@ def play(current_user) -> str:
 
         break
 
+    update_game_stats(current_user, game, "game_started")
+
     # Continue playing roulette rounds until another destination is selected.
     while True:
         action, stake, bet_choice, selected_number = confirm_bet(
@@ -556,14 +556,14 @@ def play(current_user) -> str:
             bet_choice,
             selected_number,
             roulette_history,
-            trigger
+            game
         )
 
         if action in ("choose_game", "main_menu"):
             break
 
         if current_user["playing_balance"] < stake:
-            action, stake = resolve_insufficient_balance(current_user, stake, trigger)
+            action, stake = resolve_insufficient_balance(current_user, stake, game)
 
             if action in ("choose_game", "main_menu"):
                 break
@@ -577,7 +577,7 @@ def play(current_user) -> str:
         color, parity = determine_color_and_parity(spin_result)
 
         add_recent_result(roulette_history, spin_result, color)
-        show_spin_result(spin_result, color, trigger)
+        show_spin_result(spin_result, color, game)
 
         process_spin_result(
             current_user,
@@ -587,7 +587,7 @@ def play(current_user) -> str:
             spin_result,
             color,
             parity,
-            trigger
+            game
         )
 
     return action

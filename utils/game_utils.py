@@ -79,7 +79,7 @@ Wat wilt u doen?
 1. Verder spelen
 2. Inzet aanpassen
 3. Ander spel kiezen
-0. Terug naar het hoofdmenu
+0. Terug naar de lobby
 {SEPARATOR}""")
 
     menu_choice = get_menu_choice(range(0, 4))
@@ -309,23 +309,24 @@ Uw huidige saldo bedraagt {format_currency(current_user["playing_balance"])}."""
 # OUTPUT
 # ==============================
 
-def show_game_results(game_result, trigger, payout, stake):
+def show_game_results(current_user, game_result, game, payout, stake):
     """
     Displays the result of a completed game round.
 
     Args:
+        current_user (dict): The profile of the user.
         game_result (str): The result of the game round.
-        trigger (str): The current game.
+        game (str): The current game.
         payout (int or float): The amount paid out to the player.
         stake (int or float): The amount that was wagered.
     """
     clear_terminal()
 
     print(f"""
-{trigger.capitalize()} - Speluitslag
+{game.capitalize()} - Speluitslag
 {SEPARATOR}""")
 
-    if game_result == "win":
+    if game_result == "won":
         print(f"""
 Gefeliciteerd, u heeft {GREEN}gewonnen{RESET}!
 Uw uitbetaling bedraagt {format_currency(payout)}.
@@ -349,6 +350,8 @@ Helaas, u heeft {RED}verloren{RESET}.
 """)
 
     input(CONTINUE_PROMPT)
+
+    update_game_stats(current_user, game, "round_completed", game_result)
 
 
 # ==============================
@@ -456,3 +459,17 @@ def handle_round_setup(current_user, stake, action, trigger):
         break
 
     return action, stake
+
+def update_game_stats(current_user, game, trigger, game_result=""):
+
+    if trigger is "game_started":
+        if game not in current_user["played_games"]:
+            current_user["played_games"][game] = {"games_played":1, "rounds_played":0, "results":{}}
+        else:
+            current_user["played_games"][game]["games_played"] +=1
+
+    if trigger is "round_completed":
+        if game_result not in current_user["played_games"][game]["results"]:
+            current_user["played_games"][game]["results"][game_result] = 1
+        else:
+            current_user["played_games"][game]["results"][game_result] += 1
