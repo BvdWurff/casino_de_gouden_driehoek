@@ -130,7 +130,7 @@ def login(current_user):
         else:
             print(f"""{SEPARATOR}
 1. Nogmaals proberen
-2. Account aanmaken
+2. Profiel aanmaken
 0. Terug
 {SEPARATOR}""")
 
@@ -289,7 +289,7 @@ Vul onderstaande gegevens in om een profiel aan te maken.
 
     save_profiles(current_user)
 
-    print_message("Account succesvol aangemaakt.", GREEN)
+    print_message("Profiel succesvol aangemaakt.", GREEN)
 
     input(CONTINUE_PROMPT)
 
@@ -300,18 +300,18 @@ def delete_profile():
     for profile in list(profiles):
         deleted_profiles.append(profiles.pop(profile))
 
-    number_of_accounts = len(deleted_profiles)
+    number_of_profiles = len(deleted_profiles)
 
     print()
 
-    if number_of_accounts == 0:
-        print("Geen accounts verwijderd.")
+    if number_of_profiles == 0:
+        print("Geen profielem verwijderd.")
 
-    elif number_of_accounts == 1:
-        print("Account succesvol verwijderd.")
+    elif number_of_profiles == 1:
+        print("Profiel succesvol verwijderd.")
 
     else:
-        print(f"Succesvol {number_of_accounts} accounts verwijderd.")
+        print(f"Succesvol {number_of_profiles} profiel verwijderd.")
 
     print()
     input(CONTINUE_PROMPT)
@@ -501,7 +501,7 @@ def show_profile_menu(current_user):
 2. Nieuw profiel aanmaken
 3. Profiel verwijderen
 4. Van profiel wisselen
-5. Alle profielen inzien
+5. Toon alle profielen
 
 0. Terug
 {SEPARATOR}""")

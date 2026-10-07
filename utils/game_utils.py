@@ -218,7 +218,7 @@ def handle_insufficient_balance(current_user, trigger) -> str:
 {SEPARATOR}
 1. Inzet wijzigen
 2. Saldo wijzigen
-0. Stoppen
+0. Terug
 {SEPARATOR}""")
 
         menu_choice = get_menu_choice(range(0, 3))
@@ -351,7 +351,7 @@ Helaas, u heeft {RED}verloren{RESET}.
 
     input(CONTINUE_PROMPT)
 
-    update_game_stats(current_user, game, "round_completed", game_result)
+    update_game_stats(current_user, game, "round_completed", game_result, payout)
 
 
 # ==============================
@@ -460,11 +460,11 @@ def handle_round_setup(current_user, stake, action, trigger):
 
     return action, stake
 
-def update_game_stats(current_user, game, trigger, game_result=""):
+def update_game_stats(current_user, game, trigger, game_result="", profit=""):
 
     if trigger is "game_started":
         if game not in current_user["played_games"]:
-            current_user["played_games"][game] = {"games_played":1, "rounds_played":0, "results":{}}
+            current_user["played_games"][game] = {"games_played":1, "rounds_played":0, "results":{"total_profit":0.0}}
         else:
             current_user["played_games"][game]["games_played"] +=1
 
@@ -473,3 +473,6 @@ def update_game_stats(current_user, game, trigger, game_result=""):
             current_user["played_games"][game]["results"][game_result] = 1
         else:
             current_user["played_games"][game]["results"][game_result] += 1
+
+    if profit: current_user["played_games"][game]["results"][game_result]["total_profit"] += profit
+

@@ -157,7 +157,6 @@ def get_bet_choice(
             selected_number = select_number()
 
         elif bet_choice == 0:
-            blank_lines(2)
             action = get_game_action(game)
 
             # A valid bet still needs to be selected when the game is resumed.
@@ -265,7 +264,6 @@ Wat wilt u doen?
             return "continue", stake, bet_choice, selected_number
 
         if menu_choice == 0:
-            blank_lines(2)
             action = get_game_action(game)
 
             if action == "continue":

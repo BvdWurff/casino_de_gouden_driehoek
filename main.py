@@ -71,7 +71,7 @@ of in PyCharm “Emulate terminal in output console” in te schakelen.
 
         print(f"""{SEPARATOR}
 1. Inloggen
-2. Account aanmaken
+2. Profiel aanmaken
 0. Stoppen
 {SEPARATOR}
 """)
