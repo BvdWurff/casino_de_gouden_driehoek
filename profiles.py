@@ -1,6 +1,8 @@
 import json
 import time
 import datetime
+import copy
+from getpass import getpass
 
 from utils.utils import (
     clear_terminal,
@@ -20,17 +22,14 @@ from utils.constants import (
     SERVICE_FEE,
     MANDATORY_DRINK_PRICE,
     VAT_RATE,
-    MIN_AGE
+    MIN_AGE,
 )
 
-
-with open("data/profiles.json", "r") as file:
-    profiles = json.load(file)
-
-
 def load_profiles():
-    pass
+    with open("data/profiles.json", "r") as file:
+        return json.load(file)
 
+profiles = load_profiles()
 
 def save_profiles(current_user):
 
@@ -43,10 +42,8 @@ def save_profiles(current_user):
         "gender",
         "playing_balance",
         "source",
-        "role",
-        "delete_requested",
         "visits",
-        "played_games"
+        "played_games",
     }
 
     username = current_user["username"]
@@ -55,7 +52,7 @@ def save_profiles(current_user):
         profiles[username] = {}
 
     for field in persistent_fields:
-        profiles[username][field] = current_user[field]
+        profiles[username][field] = copy.deepcopy(current_user[field])
 
     with open("data/profiles.json", "w") as file:
         json.dump(profiles, file, indent=4)
@@ -86,7 +83,7 @@ def login(current_user):
             print(INVALID_INPUT)
 
         while True:
-            password = input("Wachtwoord: ")
+            password = getpass("Wachtwoord: ")
 
             if password:
                 break
@@ -118,7 +115,7 @@ def login(current_user):
                 print_message("Ongeldig wachtwoord", RED)
 
         if username and password:
-            if len(current_user) == 0:
+            if not current_user:
                 print_message("U bent succesvol ingelogd.", GREEN)
             else:
                 save_profiles(current_user)
@@ -140,8 +137,17 @@ def login(current_user):
                 continue
 
             elif menu_choice == 2:
-                profile, username = create_profile()
-                break
+                current_user = create_profile()
+
+                if current_user is None:
+                    continue
+
+                starting_balance = current_user["playing_balance"]
+                current_user["visits"] += 1
+
+                show_welcome_message(current_user)
+
+                return current_user, starting_balance
 
             elif menu_choice == 0:
                 return None, 0.0
@@ -155,12 +161,12 @@ def login(current_user):
     return current_user, starting_balance
 
 
-def create_profile():
+def create_profile() -> dict | None:
     """
     Creates a new user profile.
 
     Returns:
-        tuple: The newly created user profile and username.
+        dict or None: The newly created user profile, or None when registration is cancelled.
     """
     birth_date = None
     starting_balance = 0.0
@@ -189,10 +195,10 @@ Vul onderstaande gegevens in om een profiel aan te maken.
         print(INVALID_INPUT)
 
     while True:
-        password = input("Geef een wachtwoord op: ")
+        password = getpass("kies een wachtwoord: ")
 
         if password:
-            confirm_password = input("Bevestig het wachtwoord: ")
+            confirm_password = getpass("Bevestig het wachtwoord: ")
 
             if password == confirm_password:
                 break
@@ -243,6 +249,11 @@ Vul onderstaande gegevens in om een profiel aan te maken.
             print(INVALID_INPUT)
             continue
 
+        age_status = check_age(birth_date)
+
+        if age_status == "underage":
+            return None
+
         birth_date = birth_date.strftime("%d-%m-%Y")
         break
 
@@ -278,47 +289,100 @@ Vul onderstaande gegevens in om een profiel aan te maken.
         "gender": gender,
         "playing_balance": starting_balance,
         "source": "user",
-        "role": "user",
-        "delete_requested": False,
         "visits": 0,
         "played_games": {}
     }
 
-    birth_date = datetime.datetime.strptime(birth_date_input, "%d-%m-%Y")
-    check_age(birth_date)
-
     save_profiles(current_user)
 
+    current_user = build_player_profile(current_user, username)
+
     print_message("Profiel succesvol aangemaakt.", GREEN)
-
     input(CONTINUE_PROMPT)
 
-
-def delete_profile():
-    deleted_profiles = []
-
-    for profile in list(profiles):
-        deleted_profiles.append(profiles.pop(profile))
-
-    number_of_profiles = len(deleted_profiles)
-
-    print()
-
-    if number_of_profiles == 0:
-        print("Geen profielem verwijderd.")
-
-    elif number_of_profiles == 1:
-        print("Profiel succesvol verwijderd.")
-
-    else:
-        print(f"Succesvol {number_of_profiles} profiel verwijderd.")
-
-    print()
-    input(CONTINUE_PROMPT)
+    return current_user
 
 
-def update_profile():
-    pass
+def delete_profile(current_user):
+    while True:
+        clear_terminal()
+
+        print(f"""
+{CASINO_NAME} - Profiel verwijderen
+{SEPARATOR}
+1. profieloverzicht
+2. profiel verwijderen
+0. Terug
+{SEPARATOR}""")
+        menu_choice = get_menu_choice(range(0, 3))
+
+        if menu_choice == 1:
+            clear_terminal()
+
+            print(f"""
+{CASINO_NAME} - Profieloverzicht
+{SEPARATOR}""")
+
+            for profile in sorted(profiles.keys()):
+                if profile == current_user["username"]:
+                    continue
+                print(profile)
+
+            print(SEPARATOR)
+            print()
+            input(CONTINUE_PROMPT)
+
+            continue
+
+        elif menu_choice == 2:
+            profile = {}
+
+            while True:
+                print()
+                username = input("Welk profiel wilt u verwijderen? ")
+
+                if username not in profiles:
+                    print_message("Onbekende gebruikersnaam", RED)
+                    continue
+
+                else:
+                    if username == current_user["username"]:
+                        print_message("U kunt het profiel waarop u momenteel bent ingelogd niet verwijderen.", RED)
+                        continue
+
+                    profile = profiles[username]
+                    break
+
+            while True:
+                password = getpass("Wachtwoord van profiel: ")
+
+                if password != profile["password"]:
+                    print_message("Ongeldig wachtwoord", RED)
+                    continue
+                break
+
+            if username and password:
+                while True:
+                    print()
+                    confirmation_choice = input(f"Weet u zeker dat u dit profiel wilt verwijderen? (Ja/Nee) ").lower()
+
+                    if confirmation_choice not in ("ja", "nee"):
+                        print(INVALID_INPUT)
+                        continue
+
+                    break
+
+                if confirmation_choice == "ja":
+                    del profiles[username]
+                    save_profiles(current_user)
+
+                    print_message("Profiel succesvol verwijderd", GREEN)
+                    input(CONTINUE_PROMPT)
+
+                continue
+
+        else:
+            return
 
 
 def show_profile(current_user):
@@ -339,12 +403,42 @@ Saldo:              {format_currency(current_user["playing_balance"])}
     input(CONTINUE_PROMPT)
 
 
+def game_statistics(current_user):
+    clear_terminal()
+
+    print(f"""
+{CASINO_NAME} - spelstatistieken
+{SEPARATOR}
+""")
+
+    if len(current_user["played_games"]) == 0:
+        print("U heeft nog geen spellen gespeeld.")
+
+
+    else:
+        for game in sorted(current_user["played_games"].keys()):
+
+            print(f"""{str(game).capitalize()}
+    Aantal keer gespeeld:       {current_user["played_games"][game]["games_played"]}
+    Aantal rondes gespeeld:     {current_user["played_games"][game]["rounds_played"]}
+    Gewonnen rondes:            {current_user["played_games"][game]["results"]["won"]}""")
+
+            if str(game) == "blackjack":
+                print(f"    Gelijkspel:                 {current_user["played_games"][game]["results"]["draw"]}")
+
+            print(f"""    Verloren rondes:            {current_user["played_games"][game]["results"]["lost"]}
+{SEPARATOR}""")
+
+    print()
+    input(CONTINUE_PROMPT)
+
+
 def show_all_profiles():
     pass
 
 
 def build_player_profile(profile, username):
-    current_user = profile.copy()
+    current_user = copy.deepcopy(profile)
 
     birth_date = datetime.datetime.strptime(current_user["birth_date"], "%d-%m-%Y")
 
@@ -489,6 +583,44 @@ Uw huidige saldo is {format_currency(current_user["playing_balance"])}.
 """)
     input(CONTINUE_PROMPT)
 
+def reset_password(current_user):
+    print(f"""
+{CASINO_NAME} - Wachtwoord wijzigen
+{SEPARATOR}
+""")
+    while True:
+        password = getpass("Huidige wachtwoord: ")
+
+        if password != current_user["password"]:
+            print_message("Ongeldig wachtwoord", RED)
+            continue
+        break
+
+    while True:
+        new_password = getpass("Nieuw wachtwoord: ")
+        if not new_password:
+            print_message("Wachtwoord mag niet leeg zijn.", RED)
+            continue
+
+        if password == new_password:
+            print_message("Nieuw wachtwoord mag niet gelijk zijn aan huidige wachtwoord.", RED)
+            continue
+        break
+
+    while True:
+        confirm_new_password = getpass("Bevestig nieuw wachtwoord: ")
+
+        if confirm_new_password != new_password:
+            print_message("Wachtwoorden komen niet overeen.", RED)
+            continue
+
+        if new_password == confirm_new_password:
+            current_user["password"] = new_password
+            print_message("Wachtwoord succesvol gewijzigd.", GREEN)
+            break
+
+    input(CONTINUE_PROMPT)
+
 
 def show_profile_menu(current_user):
     while True:
@@ -498,32 +630,78 @@ def show_profile_menu(current_user):
 {CASINO_NAME} - Profielbeheer
 {SEPARATOR}
 1. Mijn profiel
-2. Nieuw profiel aanmaken
-3. Profiel verwijderen
-4. Van profiel wisselen
-5. Toon alle profielen
+2. Mijn spelstatistieken
+3. Wachtwoord wijzigen
+4. Nieuw profiel aanmaken
+5. Profiel verwijderen
+6. Van profiel wisselen
+7. Toon alle profielen
 
 0. Terug
 {SEPARATOR}""")
 
-        menu_choice = get_menu_choice(range(0, 6))
+        menu_choice = get_menu_choice(range(0, 8))
 
         if menu_choice == 1:
             show_profile(current_user)
             continue
 
-        if menu_choice == 2:
+        elif menu_choice == 2:
+            game_statistics(current_user)
+            continue
+
+        elif menu_choice == 3:
+            reset_password(current_user)
+            continue
+
+        elif menu_choice == 4:
             create_profile()
             continue
 
-        if menu_choice == 4:
-            login(current_user)
-            break
-    return
+        elif menu_choice == 5:
+            delete_profile(current_user)
+            continue
+
+        elif menu_choice == 6:
+            save_profiles(current_user)
+            new_user, _ = login(current_user)
+            if new_user is not None:
+                return new_user
+            continue
+
+        if menu_choice == 7:
+            show_all_account()
+            continue
+
+        return current_user
 
 
+def show_all_account():
+    clear_terminal()
 
-def check_age(birth_date):
+    print(f"""
+{CASINO_NAME} - Overzicht profielen
+{SEPARATOR}
+ """)
+
+    for profile in sorted(profiles.keys()):
+        name = profiles[profile]["first_name"]
+
+        if profiles[profile]["surname_prefix"]:
+            name += f" {profiles[profile]["surname_prefix"]}"
+
+        name += f" {profiles[profile]["surname"]}"
+
+        print(f"""{profile}     
+    Naam:       {name}
+    Saldo:      {format_currency(profiles[profile]["playing_balance"])}
+{SEPARATOR}""")
+
+    print()
+    input(CONTINUE_PROMPT)
+
+
+def check_age(birth_date) -> str:
     """
     Checks whether the guest meets the minimum age requirement.
 
@@ -531,14 +709,12 @@ def check_age(birth_date):
         birth_date (datetime.datetime): The guest's birthdate.
 
     Returns:
-        datetime.datetime: The birthdate if the age requirement is met.
+        str: The age status.
     """
 
     current_date = datetime.datetime.now()
     minimum_age_year = birth_date.year + MIN_AGE
 
-    # A February 29 birthdate may not exist in the year the minimum age is reached.
-    # In that case, February 28 is used as the minimum-age birthday.
     if birth_date.day == 29 and birth_date.month == 2:
         minimum_age_birthday = datetime.datetime(minimum_age_year, 2, 28)
     else:
@@ -548,17 +724,15 @@ def check_age(birth_date):
         clear_terminal()
 
         print(f"""
-{CASINO_NAME} - Vertrek
-{SEPARATOR}
-De minimale leeftijd voor {CASINO_NAME} is {MIN_AGE} jaar.
-U heeft deze leeftijd nog niet bereikt.
+    De minimale leeftijd voor {CASINO_NAME} is {MIN_AGE} jaar.
+    U heeft deze leeftijd nog niet bereikt.
 
-U bent van harte welkom vanaf {minimum_age_birthday.strftime("%d-%m-%Y")}.
-{SEPARATOR}
-""")
-        input("Druk op Enter om het casino te verlaten.")
+    U bent van harte welkom vanaf {minimum_age_birthday.strftime("%d-%m-%Y")}.
+    {SEPARATOR}
+    """)
+        input(CONTINUE_PROMPT)
         print()
 
-        exit(1)
+        return "underage"
 
-    return
+    return "continue"

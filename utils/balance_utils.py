@@ -178,7 +178,7 @@ def determine_balance_status(current_user):
     Determines whether the playing balance is sufficient.
 
     Args:
-        playing_balance (int or float): The current playing balance.
+        current_user (dict): The profile of the current user.
 
     Returns:
         tuple: The internal balance status and its Dutch display text.

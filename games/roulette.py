@@ -569,6 +569,7 @@ def play(current_user) -> str:
             # Any balance or stake change must be confirmed before spinning.
             continue
 
+        current_user["played_games"][game]["rounds_played"] += 1
         current_user["playing_balance"] = round(current_user["playing_balance"] - stake, 2)
 
         spin_result = random.randint(0, 36)

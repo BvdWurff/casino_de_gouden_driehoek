@@ -8,8 +8,6 @@
         "gender": "Male",
         "playing_balance": 100.0,
         "source": "admin",
-        "role": "admin",
-        "delete_requested": false,
         "visits": 0,
         "played_games": {}
     },
@@ -21,9 +19,7 @@
         "birth_date": "19-08-1946",
         "gender": "Male",
         "playing_balance": 8000.0,
-        "source": "dummy_data",
-        "role": "user",
-        "delete_requested": false,
+        "source": "demo_data",
         "visits": 0,
         "played_games": {}
     },
@@ -35,9 +31,7 @@
         "birth_date": "29-01-1954",
         "gender": "Female",
         "playing_balance": 900.0,
-        "source": "dummy_data",
-        "role": "user",
-        "delete_requested": false,
+        "source": "demo_data",
         "visits": 0,
         "played_games": {}
     },
@@ -49,9 +43,7 @@
         "birth_date": "02-09-1964",
         "gender": "Male",
         "playing_balance": 1111.0,
-        "source": "dummy_data",
-        "role": "user",
-        "delete_requested": false,
+        "source": "demo_data",
         "visits": 0,
         "played_games": {}
     },
@@ -63,9 +55,7 @@
         "birth_date": "02-12-1981",
         "gender": "Female",
         "playing_balance": 50.0,
-        "source": "dummy_data",
-        "role": "user",
-        "delete_requested": false,
+        "source": "demo_data",
         "visits": 0,
         "played_games": {}
     },
@@ -77,9 +67,7 @@
         "birth_date": "30-07-1947",
         "gender": "Male",
         "playing_balance": 950000.0,
-        "source": "dummy_data",
-        "role": "user",
-        "delete_requested": false,
+        "source": "demo_data",
         "visits": 0,
         "played_games": {}
     },
@@ -91,9 +79,7 @@
         "birth_date": "05-10-1958",
         "gender": "Male",
         "playing_balance": 4200.0,
-        "source": "dummy_data",
-        "role": "user",
-        "delete_requested": false,
+        "source": "demo_data",
         "visits": 0,
         "played_games": {}
     },
@@ -106,9 +92,7 @@
         "gender": "man",
         "playing_balance": 2350.0,
         "source": "create_account",
-        "role": "user",
-        "delete_requested": false,
-        "visits": 7,
+        "visits": 9,
         "played_games": {
             "roulettetafel": {
                 "games_played": 1,
@@ -135,11 +119,6 @@
                     "draw": 1
                 }
             }
-        },
-        "username": "bart",
-        "age": 41,
-        "full_surname": "Van der Wurff",
-        "full_name": "Bart van der Wurff",
-        "salutation": "meneer Van der Wurff"
+        }
     }
 }

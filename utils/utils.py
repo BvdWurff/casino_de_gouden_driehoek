@@ -12,10 +12,6 @@ import subprocess
 from utils.constants import (
     CHOOSE_OPTION,
     INVALID_INPUT,
-    RED,
-    GREEN,
-    ORANGE,
-    WHITE_BACKGROUND,
     RESET,
 )
 
@@ -76,12 +72,8 @@ def get_confirmation(action):
         confirmation_choice = input(f"Weet u zeker dat u wilt {action}? (Ja/Nee) ").lower()
 
         if confirmation_choice not in ("ja", "nee"):
-            print()
             print(INVALID_INPUT)
-            print()
             continue
-
-        blank_lines(2)
 
         return confirmation_choice == "ja"
 

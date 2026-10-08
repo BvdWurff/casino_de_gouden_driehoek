@@ -138,7 +138,7 @@ def game_menu(current_user, trigger, game_instructions) -> str:
             continue
 
         if menu_choice == 3:
-            current_user["playing_balance"], _ = manage_balance(current_user["playing_balance"], trigger=trigger)
+            manage_balance(current_user, trigger=trigger)
             continue
 
         if menu_choice == 0:
@@ -229,7 +229,7 @@ def handle_insufficient_balance(current_user, trigger) -> str:
 
         elif menu_choice == 2:
             blank_lines(2)
-            current_user["playing_balance"], _ = manage_balance(current_user["playing_balance"], trigger=trigger)
+            manage_balance(current_user, trigger=trigger)
             action = "new_playing_balance"
 
         else:
@@ -351,7 +351,7 @@ Helaas, u heeft {RED}verloren{RESET}.
 
     input(CONTINUE_PROMPT)
 
-    update_game_stats(current_user, game, "round_completed", game_result, payout)
+    update_game_stats(current_user, game, "round_completed", game_result)
 
 
 # ==============================
@@ -460,19 +460,14 @@ def handle_round_setup(current_user, stake, action, trigger):
 
     return action, stake
 
-def update_game_stats(current_user, game, trigger, game_result="", profit=""):
+def update_game_stats(current_user, game, trigger, game_result=""):
 
-    if trigger is "game_started":
+    if trigger == "game_started":
         if game not in current_user["played_games"]:
-            current_user["played_games"][game] = {"games_played":1, "rounds_played":0, "results":{"total_profit":0.0}}
+            current_user["played_games"][game] = {"games_played":1, "rounds_played":0, "results":{"won":0, "lost":0, "draw":0}}
         else:
             current_user["played_games"][game]["games_played"] +=1
 
-    if trigger is "round_completed":
-        if game_result not in current_user["played_games"][game]["results"]:
-            current_user["played_games"][game]["results"][game_result] = 1
-        else:
-            current_user["played_games"][game]["results"][game_result] += 1
-
-    if profit: current_user["played_games"][game]["results"][game_result]["total_profit"] += profit
+    if trigger == "round_completed":
+        current_user["played_games"][game]["results"][game_result] += 1
 

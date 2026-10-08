@@ -154,7 +154,7 @@ def main_menu(current_user):
 1. Spellen
 2. Saldo
 3. Profiel
-0. Uitloggen
+0. Casino verlaten
 {SEPARATOR}""")
 
         menu_choice = get_menu_choice(range(0, 4))
@@ -169,23 +169,21 @@ def main_menu(current_user):
                 manage_balance(current_user)
 
             else:
-                blank_lines(2)
                 choose_game(current_user)
 
         elif menu_choice == 2:
             manage_balance(current_user)
 
         elif menu_choice == 3:
-            show_profile_menu(current_user)
+            current_user = show_profile_menu(current_user)
 
         elif menu_choice == 0:
             confirmation = get_confirmation("stoppen")
 
             if confirmation:
-                blank_lines(2)
                 break
 
-            blank_lines(2)
+    return current_user
 
 
 # ==============================
@@ -217,7 +215,7 @@ def main():
 
     while True:
         if balance_status == "sufficient":
-            main_menu(current_user)
+            current_user = main_menu(current_user)
             break
 
         trigger = "insufficient_starting_balance"
@@ -227,7 +225,7 @@ def main():
         if action == "end_program":
             break
 
-        balance_status, _ = determine_balance_status(current_user["playing_balance"])
+        balance_status, _ = determine_balance_status(current_user)
 
     show_parting_message(current_user)
     save_profiles(current_user)

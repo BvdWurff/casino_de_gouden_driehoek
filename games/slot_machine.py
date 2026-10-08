@@ -200,6 +200,7 @@ def play(current_user) -> str:
         if action in ("choose_game", "main_menu"):
             break
 
+        current_user["played_games"][game]["rounds_played"] += 1
         current_user["playing_balance"] = round(current_user["playing_balance"] - stake, 2)
         spin_results = random.choices(list(SYMBOL_MULTIPLIERS), k=3)
 
