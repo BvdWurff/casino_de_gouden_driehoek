@@ -1,3 +1,7 @@
+# ==============================
+# FUNCTION IMPORTS
+# ==============================
+
 import json
 import time
 import datetime
@@ -10,6 +14,11 @@ from utils.utils import (
     print_message,
     format_currency,
 )
+
+
+# ==============================
+# CONSTANTS
+# ==============================
 
 from utils.constants import (
     CASINO_NAME,
@@ -25,15 +34,35 @@ from utils.constants import (
     MIN_AGE,
 )
 
+
+# ==============================
+# PROFILE PERSISTENCE
+# ==============================
+
 def load_profiles():
+    """
+    Loads all stored profiles from the profiles JSON file.
+
+    Returns:
+        dict: The stored user profiles.
+    """
     with open("data/profiles.json", "r") as file:
         return json.load(file)
 
+
 profiles = load_profiles()
 
-def save_profiles(current_user):
 
-    persistent_fields = {
+def save_profiles(current_user):
+    """
+    Saves the persistent fields of the current user to the profiles JSON file.
+
+    Args:
+        current_user (dict): The profile of the current user.
+    """
+    global profiles
+
+    persistent_fields = (
         "password",
         "first_name",
         "surname_prefix",
@@ -44,7 +73,7 @@ def save_profiles(current_user):
         "source",
         "visits",
         "played_games",
-    }
+    )
 
     username = current_user["username"]
 
@@ -58,9 +87,173 @@ def save_profiles(current_user):
         json.dump(profiles, file, indent=4)
 
 
+# ==============================
+# PROFILE HELPERS
+# ==============================
+
+def calculate_age(birth_date):
+    """
+    Calculates the guest's current age.
+
+    Args:
+        birth_date (datetime.datetime): The guest's birthdate.
+
+    Returns:
+        int: The guest's current age.
+    """
+    current_date = datetime.datetime.now()
+    current_age = current_date.year - birth_date.year
+
+    if (current_date.month, current_date.day) < (birth_date.month, birth_date.day):
+        current_age -= 1
+
+    return current_age
+
+
+def check_age(birth_date) -> str:
+    """
+    Checks whether the guest meets the minimum age requirement.
+
+    Args:
+        birth_date (datetime.datetime): The guest's birthdate.
+
+    Returns:
+        str: The age status.
+    """
+    current_date = datetime.datetime.now()
+    minimum_age_year = birth_date.year + MIN_AGE
+
+    if birth_date.day == 29 and birth_date.month == 2:
+        minimum_age_birthday = datetime.datetime(minimum_age_year, 2, 28)
+    else:
+        minimum_age_birthday = birth_date.replace(year=minimum_age_year)
+
+    if current_date < minimum_age_birthday:
+        clear_terminal()
+
+        print(f"""
+    De minimale leeftijd voor {CASINO_NAME} is {MIN_AGE} jaar.
+    U heeft deze leeftijd nog niet bereikt.
+
+    U bent van harte welkom vanaf {minimum_age_birthday.strftime("%d-%m-%Y")}.
+    {SEPARATOR}
+    """)
+
+        input(CONTINUE_PROMPT)
+        print()
+
+        return "underage"
+
+    return "continue"
+
+
+def determine_full_name(first_name, surname_prefix, surname):
+    """
+    Builds the guest's full name.
+
+    Args:
+        first_name (str): The guest's first name.
+        surname_prefix (str): The guest's surname prefix.
+        surname (str): The guest's surname.
+
+    Returns:
+        str: The guest's full name.
+    """
+    full_name = first_name.capitalize()
+
+    if surname_prefix:
+        full_name += f" {surname_prefix}"
+
+    full_name += f" {surname.capitalize()}"
+
+    return full_name
+
+
+def determine_full_surname(surname_prefix, surname):
+    """
+    Builds the guest's full surname.
+
+    Args:
+        surname_prefix (str): The guest's surname prefix.
+        surname (str): The guest's surname.
+
+    Returns:
+        str: The guest's full surname.
+    """
+    full_surname = ""
+
+    if surname_prefix:
+        full_surname += f"{surname_prefix.capitalize()} {surname.capitalize()}"
+    else:
+        full_surname += surname.capitalize()
+
+    return full_surname
+
+
+def determine_salutation(full_surname, full_name, gender):
+    """
+    Determines the appropriate salutation for the guest.
+
+    Args:
+        full_surname (str): The guest's full surname.
+        full_name (str): The guest's full name.
+        gender (str): The guest's gender.
+
+    Returns:
+        str: The salutation used to address the guest.
+    """
+    if gender == "man":
+        salutation = f"meneer {full_surname}"
+    elif gender == "vrouw":
+        salutation = f"mevrouw {full_surname}"
+    else:
+        salutation = full_name
+
+    return salutation
+
+
+def build_player_profile(profile, username):
+    """
+    Builds the runtime profile for the current user.
+
+    Args:
+        profile (dict): The stored user profile.
+        username (str): The username of the current user.
+
+    Returns:
+        dict: The completed runtime profile.
+    """
+    current_user = copy.deepcopy(profile)
+
+    birth_date = datetime.datetime.strptime(current_user["birth_date"], "%d-%m-%Y")
+
+    current_user["username"] = username
+    current_user["age"] = calculate_age(birth_date)
+    current_user["full_surname"] = determine_full_surname(current_user["surname_prefix"], current_user["surname"])
+    current_user["full_name"] = determine_full_name(
+        current_user["first_name"],
+        current_user["surname_prefix"],
+        current_user["surname"]
+    )
+    current_user["salutation"] = determine_salutation(
+        current_user["full_surname"],
+        current_user["full_name"],
+        current_user["gender"]
+    )
+
+    return current_user
+
+
+# ==============================
+# AUTHENTICATION AND REGISTRATION
+# ==============================
+
 def login(current_user):
     """
     Logs in to a user profile.
+
+    Args:
+        current_user (dict): The profile of the currently logged-in user.
 
     Returns:
         tuple: The current user profile and starting balance.
@@ -104,15 +297,15 @@ def login(current_user):
         time.sleep(0.5)
 
         if username not in profiles:
-            username = False
-            print_message("Onbekende gebruikersnaam", RED)
+            username = ""
+            print_message("Onbekende gebruikersnaam.", RED)
 
         else:
             profile = profiles[username]
 
             if password != profile["password"]:
-                password = False
-                print_message("Ongeldig wachtwoord", RED)
+                password = ""
+                print_message("Ongeldig wachtwoord.", RED)
 
         if username and password:
             if not current_user:
@@ -195,7 +388,7 @@ Vul onderstaande gegevens in om een profiel aan te maken.
         print(INVALID_INPUT)
 
     while True:
-        password = getpass("kies een wachtwoord: ")
+        password = getpass("Kies een wachtwoord: ")
 
         if password:
             confirm_password = getpass("Bevestig het wachtwoord: ")
@@ -303,17 +496,28 @@ Vul onderstaande gegevens in om een profiel aan te maken.
     return current_user
 
 
+# ==============================
+# PROFILE MANAGEMENT
+# ==============================
+
 def delete_profile(current_user):
+    """
+    Displays the profile deletion menu and handles profile removal.
+
+    Args:
+        current_user (dict): The profile of the current user.
+    """
     while True:
         clear_terminal()
 
         print(f"""
 {CASINO_NAME} - Profiel verwijderen
 {SEPARATOR}
-1. profieloverzicht
-2. profiel verwijderen
+1. Profieloverzicht
+2. Profiel verwijderen
 0. Terug
 {SEPARATOR}""")
+
         menu_choice = get_menu_choice(range(0, 3))
 
         if menu_choice == 1:
@@ -326,6 +530,7 @@ def delete_profile(current_user):
             for profile in sorted(profiles.keys()):
                 if profile == current_user["username"]:
                     continue
+
                 print(profile)
 
             print(SEPARATOR)
@@ -335,58 +540,128 @@ def delete_profile(current_user):
             continue
 
         elif menu_choice == 2:
+            if len(profiles) == 1:
+                print_message("Het enige overgebleven profiel kan niet worden verwijderd.", RED)
+                input(CONTINUE_PROMPT)
+                continue
+
             profile = {}
 
             while True:
                 print()
-                username = input("Welk profiel wilt u verwijderen? ")
+                username = input("Welk profiel wilt u verwijderen? ").lower()
 
                 if username not in profiles:
-                    print_message("Onbekende gebruikersnaam", RED)
+                    print_message("Onbekende gebruikersnaam.", RED)
                     continue
 
-                else:
-                    if username == current_user["username"]:
-                        print_message("U kunt het profiel waarop u momenteel bent ingelogd niet verwijderen.", RED)
-                        continue
+                if username == current_user["username"]:
+                    print_message("U kunt het profiel waarop u momenteel bent ingelogd niet verwijderen.", RED)
+                    continue
 
-                    profile = profiles[username]
-                    break
+                profile = profiles[username]
+                break
 
             while True:
                 password = getpass("Wachtwoord van profiel: ")
 
                 if password != profile["password"]:
-                    print_message("Ongeldig wachtwoord", RED)
+                    print_message("Ongeldig wachtwoord.", RED)
                     continue
+
                 break
 
-            if username and password:
-                while True:
-                    print()
-                    confirmation_choice = input(f"Weet u zeker dat u dit profiel wilt verwijderen? (Ja/Nee) ").lower()
+            while True:
+                print()
+                confirmation_choice = input("Weet u zeker dat u dit profiel wilt verwijderen? (Ja/Nee) ").lower()
 
-                    if confirmation_choice not in ("ja", "nee"):
-                        print(INVALID_INPUT)
-                        continue
+                if confirmation_choice not in ("ja", "nee"):
+                    print(INVALID_INPUT)
+                    continue
 
-                    break
+                break
 
-                if confirmation_choice == "ja":
-                    del profiles[username]
-                    save_profiles(current_user)
+            if confirmation_choice == "ja":
+                del profiles[username]
+                save_profiles(current_user)
 
-                    print_message("Profiel succesvol verwijderd", GREEN)
-                    input(CONTINUE_PROMPT)
+                print_message("Profiel succesvol verwijderd.", GREEN)
+                input(CONTINUE_PROMPT)
 
-                continue
+            continue
 
         else:
             return
 
 
+def reset_password(current_user):
+    """
+    Changes the password of the current user.
+
+    Args:
+        current_user (dict): The profile of the current user.
+    """
+    print(f"""
+{CASINO_NAME} - Wachtwoord wijzigen
+{SEPARATOR}
+""")
+
+    while True:
+        password = getpass("Huidige wachtwoord: ")
+
+        if password != current_user["password"]:
+            print_message("Ongeldig wachtwoord.", RED)
+            continue
+
+        break
+
+    while True:
+        new_password = getpass("Nieuw wachtwoord: ")
+
+        if not new_password:
+            print_message("Wachtwoord mag niet leeg zijn.", RED)
+            continue
+
+        if password == new_password:
+            print_message("Nieuw wachtwoord mag niet gelijk zijn aan huidige wachtwoord.", RED)
+            continue
+
+        break
+
+    while True:
+        confirm_new_password = getpass("Bevestig nieuw wachtwoord: ")
+
+        if confirm_new_password != new_password:
+            print_message("Wachtwoorden komen niet overeen.", RED)
+            continue
+
+        current_user["password"] = new_password
+        print_message("Wachtwoord succesvol gewijzigd.", GREEN)
+        break
+
+    input(CONTINUE_PROMPT)
+
+
+# ==============================
+# OUTPUT
+# ==============================
+
 def show_profile(current_user):
+    """
+    Displays the profile details of the current user.
+
+    Args:
+        current_user (dict): The profile of the current user.
+    """
     clear_terminal()
+
+    played_games = ""
+
+    for game in sorted(current_user["played_games"].keys()):
+        played_games += f"{str(game).capitalize()}, "
+
+    played_games = played_games[:-2]
+
 
     print(f"""
 {CASINO_NAME} - Profiel
@@ -397,33 +672,37 @@ Geslacht:           {current_user["gender"].capitalize()}
 Geboortedatum:      {current_user["birth_date"]}
 Leeftijd:           {current_user["age"]}
 Saldo:              {format_currency(current_user["playing_balance"])}
+Gespeelde spellen:  {played_games}
 {SEPARATOR}
 """)
 
     input(CONTINUE_PROMPT)
 
 
-def game_statistics(current_user):
+def show_game_statistics(current_user):
+    """
+    Displays the stored game statistics of the current user.
+
+    Args:
+        current_user (dict): The profile of the current user.
+    """
     clear_terminal()
 
     print(f"""
-{CASINO_NAME} - spelstatistieken
-{SEPARATOR}
-""")
+{CASINO_NAME} - Spelstatistieken
+{SEPARATOR}""")
 
-    if len(current_user["played_games"]) == 0:
+    if not current_user["played_games"]:
         print("U heeft nog geen spellen gespeeld.")
-
 
     else:
         for game in sorted(current_user["played_games"].keys()):
-
             print(f"""{str(game).capitalize()}
     Aantal keer gespeeld:       {current_user["played_games"][game]["games_played"]}
     Aantal rondes gespeeld:     {current_user["played_games"][game]["rounds_played"]}
     Gewonnen rondes:            {current_user["played_games"][game]["results"]["won"]}""")
 
-            if str(game) == "blackjack":
+            if game == "blackjack":
                 print(f"    Gelijkspel:                 {current_user["played_games"][game]["results"]["draw"]}")
 
             print(f"""    Verloren rondes:            {current_user["played_games"][game]["results"]["lost"]}
@@ -433,93 +712,36 @@ def game_statistics(current_user):
     input(CONTINUE_PROMPT)
 
 
-def show_all_profiles():
-    pass
-
-
-def build_player_profile(profile, username):
-    current_user = copy.deepcopy(profile)
-
-    birth_date = datetime.datetime.strptime(current_user["birth_date"], "%d-%m-%Y")
-
-    current_user["username"] = username
-    current_user["age"] = calculate_age(birth_date)
-    current_user["full_surname"] = determine_full_surname(current_user["surname_prefix"], current_user["surname"])
-    current_user["full_name"] = determine_full_name(
-        current_user["first_name"],
-        current_user["surname_prefix"],
-        current_user["surname"]
-    )
-    current_user["salutation"] = determine_salutation(
-        current_user["full_surname"],
-        current_user["full_name"],
-        current_user["gender"]
-    )
-
-    return current_user
-
-
-def calculate_age(birth_date):
+def show_all_profiles(current_user):
     """
-    Calculates the guest's current age.
+    Saves the current profile and displays an overview of all stored profiles.
 
     Args:
-        birth_date (datetime.datetime): The guest's birthdate.
-
-    Returns:
-        int: The guest's current age.
+        current_user (dict): The profile of the current user.
     """
-    current_date = datetime.datetime.now()
-    current_age = current_date.year - birth_date.year
+    clear_terminal()
+    save_profiles(current_user)
 
-    if (current_date.month, current_date.day) < (birth_date.month, birth_date.day):
-        current_age -= 1
+    print(f"""
+{CASINO_NAME} - Overzicht profielen
+{SEPARATOR}
+ """)
 
-    return current_age
+    for username in sorted(profiles.keys()):
+        name = profiles[username]["first_name"]
 
+        if profiles[username]["surname_prefix"]:
+            name += f" {profiles[username]["surname_prefix"]}"
 
-def determine_salutation(full_surname, full_name, gender):
-    """
-    Determines the appropriate salutation for the guest.
+        name += f" {profiles[username]["surname"]}"
 
-    Args:
-        full_surname (str): The guest's full surname.
-        full_name (str): The guest's full name.
-        gender (str): The guest's gender.
+        print(f"""{username}
+    Naam:       {name}
+    Saldo:      {format_currency(profiles[username]["playing_balance"])}
+{SEPARATOR}""")
 
-    Returns:
-        str: The salutation used to address the guest.
-    """
-    if gender == "man":
-        salutation = f"meneer {full_surname}"
-    elif gender == "vrouw":
-        salutation = f"mevrouw {full_surname}"
-    else:
-        salutation = full_name
-
-    return salutation
-
-
-def determine_full_name(first_name, surname_prefix, surname):
-    full_name = first_name.capitalize()
-
-    if surname_prefix:
-        full_name += f" {surname_prefix}"
-
-    full_name += f" {surname.capitalize()}"
-
-    return full_name
-
-
-def determine_full_surname(surname_prefix, surname):
-    full_surname = ""
-
-    if surname_prefix:
-        full_surname += f"{surname_prefix.capitalize()} {surname.capitalize()}"
-    else:
-        full_surname += surname.capitalize()
-
-    return full_surname
+    print()
+    input(CONTINUE_PROMPT)
 
 
 def show_registration_summary(
@@ -534,7 +756,7 @@ def show_registration_summary(
     Displays the guest's registration and cost summary.
 
     Args:
-        current_user (dict): The profile of the user.
+        current_user (dict): The profile of the current user.
         starting_balance (int or float): The guest's initial budget.
         vat_amount (int or float): The VAT amount included in the fixed costs.
         fixed_costs (int or float): The total fixed casino costs.
@@ -542,6 +764,7 @@ def show_registration_summary(
         balance_status_text (str): The Dutch display text for the balance status.
     """
     clear_terminal()
+
     print(f"""
 {CASINO_NAME} - Welkomstpagina
 {SEPARATOR}
@@ -572,7 +795,14 @@ U heeft {balance_status_text} budget voor toegang tot het casino.
 
 
 def show_welcome_message(current_user):
+    """
+    Displays the welcome message for the current user.
+
+    Args:
+        current_user (dict): The profile of the current user.
+    """
     clear_terminal()
+
     print(f"""
 {CASINO_NAME} - Welkomstpagina
 {SEPARATOR}
@@ -581,48 +811,24 @@ Welkom terug, {current_user["salutation"]}!
 Uw huidige saldo is {format_currency(current_user["playing_balance"])}.
 {SEPARATOR}
 """)
-    input(CONTINUE_PROMPT)
-
-def reset_password(current_user):
-    print(f"""
-{CASINO_NAME} - Wachtwoord wijzigen
-{SEPARATOR}
-""")
-    while True:
-        password = getpass("Huidige wachtwoord: ")
-
-        if password != current_user["password"]:
-            print_message("Ongeldig wachtwoord", RED)
-            continue
-        break
-
-    while True:
-        new_password = getpass("Nieuw wachtwoord: ")
-        if not new_password:
-            print_message("Wachtwoord mag niet leeg zijn.", RED)
-            continue
-
-        if password == new_password:
-            print_message("Nieuw wachtwoord mag niet gelijk zijn aan huidige wachtwoord.", RED)
-            continue
-        break
-
-    while True:
-        confirm_new_password = getpass("Bevestig nieuw wachtwoord: ")
-
-        if confirm_new_password != new_password:
-            print_message("Wachtwoorden komen niet overeen.", RED)
-            continue
-
-        if new_password == confirm_new_password:
-            current_user["password"] = new_password
-            print_message("Wachtwoord succesvol gewijzigd.", GREEN)
-            break
 
     input(CONTINUE_PROMPT)
 
+
+# ==============================
+# MENUS AND NAVIGATION
+# ==============================
 
 def show_profile_menu(current_user):
+    """
+    Displays the profile management menu and handles profile-related actions.
+
+    Args:
+        current_user (dict): The profile of the current user.
+
+    Returns:
+        dict: The active user profile.
+    """
     while True:
         clear_terminal()
 
@@ -647,7 +853,7 @@ def show_profile_menu(current_user):
             continue
 
         elif menu_choice == 2:
-            game_statistics(current_user)
+            show_game_statistics(current_user)
             continue
 
         elif menu_choice == 3:
@@ -665,74 +871,14 @@ def show_profile_menu(current_user):
         elif menu_choice == 6:
             save_profiles(current_user)
             new_user, _ = login(current_user)
+
             if new_user is not None:
                 return new_user
+
             continue
 
         if menu_choice == 7:
-            show_all_account()
+            show_all_profiles(current_user)
             continue
 
         return current_user
-
-
-def show_all_account():
-    clear_terminal()
-
-    print(f"""
-{CASINO_NAME} - Overzicht profielen
-{SEPARATOR}
- """)
-
-    for profile in sorted(profiles.keys()):
-        name = profiles[profile]["first_name"]
-
-        if profiles[profile]["surname_prefix"]:
-            name += f" {profiles[profile]["surname_prefix"]}"
-
-        name += f" {profiles[profile]["surname"]}"
-
-        print(f"""{profile}     
-    Naam:       {name}
-    Saldo:      {format_currency(profiles[profile]["playing_balance"])}
-{SEPARATOR}""")
-
-    print()
-    input(CONTINUE_PROMPT)
-
-
-def check_age(birth_date) -> str:
-    """
-    Checks whether the guest meets the minimum age requirement.
-
-    Args:
-        birth_date (datetime.datetime): The guest's birthdate.
-
-    Returns:
-        str: The age status.
-    """
-
-    current_date = datetime.datetime.now()
-    minimum_age_year = birth_date.year + MIN_AGE
-
-    if birth_date.day == 29 and birth_date.month == 2:
-        minimum_age_birthday = datetime.datetime(minimum_age_year, 2, 28)
-    else:
-        minimum_age_birthday = birth_date.replace(year=minimum_age_year)
-
-    if current_date < minimum_age_birthday:
-        clear_terminal()
-
-        print(f"""
-    De minimale leeftijd voor {CASINO_NAME} is {MIN_AGE} jaar.
-    U heeft deze leeftijd nog niet bereikt.
-
-    U bent van harte welkom vanaf {minimum_age_birthday.strftime("%d-%m-%Y")}.
-    {SEPARATOR}
-    """)
-        input(CONTINUE_PROMPT)
-        print()
-
-        return "underage"
-
-    return "continue"

@@ -83,39 +83,7 @@ def select_number():
         print(INVALID_INPUT)
 
 
-def get_bet_choice_text(bet_choice):
-    """
-    Converts the internal roulette bet choice to its Dutch display text.
-
-    Args:
-        bet_choice (int): The selected roulette bet.
-
-    Returns:
-        str: The Dutch display text for the selected bet.
-    """
-    match bet_choice:
-        case 1:
-            choice_text = "Rood"
-        case 2:
-            choice_text = "Zwart"
-        case 3:
-            choice_text = "Groen"
-        case 4:
-            choice_text = "Even"
-        case 5:
-            choice_text = "Oneven"
-        case 6:
-            choice_text = "Nummer"
-        case _:
-            choice_text = "Onbekend"
-
-    return choice_text
-
-
-def get_bet_choice(
-    recent_results,
-    game
-):
+def get_bet_choice(recent_results, game):
     """
     Displays the available roulette bets and requests the player's choice.
 
@@ -193,10 +161,7 @@ def change_bet(
     previous_bet_choice = bet_choice
     previous_selected_number = selected_number
 
-    action, bet_choice, selected_number = get_bet_choice(
-        recent_results,
-        game
-    )
+    action, bet_choice, selected_number = get_bet_choice(recent_results, game)
 
     if action == "change_stake":
         # Keep the previous bet when only the stake is changed.
@@ -207,7 +172,14 @@ def change_bet(
     return action, stake, bet_choice, selected_number
 
 
-def confirm_bet(current_user, stake, bet_choice, selected_number, recent_results, game):
+def confirm_bet(
+    current_user,
+    stake,
+    bet_choice,
+    selected_number,
+    recent_results,
+    game
+):
     """
     Displays the current bet and allows the player to confirm or modify it.
 
@@ -330,7 +302,7 @@ def determine_color_and_parity(spin_result):
     Determines the color and parity of a roulette result.
 
     Args:
-        spin_result (int): The roulette number that was rolled.
+        spin_result (int): The roulette number the ball landed on.
 
     Returns:
         tuple: The color and parity of the roulette result.
@@ -376,7 +348,7 @@ def process_spin_result(
         stake (int or float): The amount that was wagered.
         bet_choice (int): The selected roulette bet.
         selected_number (int or None): The selected roulette number.
-        spin_result (int): The roulette number that was rolled.
+        spin_result (int): The roulette number the ball landed on.
         color (str): The color of the roulette result.
         parity (str): The parity of the roulette result.
         game (str): The current game.
@@ -414,7 +386,7 @@ def add_recent_result(recent_results, spin_result, color):
 
     Args:
         recent_results (list): The stored recent roulette results.
-        spin_result (int): The roulette number that was rolled.
+        spin_result (int): The roulette number the ball landed on.
         color (str): The color of the roulette result.
     """
     recent_results.append([spin_result, color])
@@ -426,6 +398,35 @@ def add_recent_result(recent_results, spin_result, color):
 # ==============================
 # OUTPUT
 # ==============================
+
+def get_bet_choice_text(bet_choice):
+    """
+    Converts the internal roulette bet choice to its Dutch display text.
+
+    Args:
+        bet_choice (int): The selected roulette bet.
+
+    Returns:
+        str: The Dutch display text for the selected bet.
+    """
+    match bet_choice:
+        case 1:
+            choice_text = "Rood"
+        case 2:
+            choice_text = "Zwart"
+        case 3:
+            choice_text = "Groen"
+        case 4:
+            choice_text = "Even"
+        case 5:
+            choice_text = "Oneven"
+        case 6:
+            choice_text = "Nummer"
+        case _:
+            choice_text = "Onbekend"
+
+    return choice_text
+
 
 def get_font_color(color):
     """
@@ -474,7 +475,7 @@ def show_spin_result(spin_result, color, game):
     Displays the roulette spin and its result.
 
     Args:
-        spin_result (int): The roulette number that was rolled.
+        spin_result (int): The roulette number the ball landed on.
         color (str): The color of the roulette result.
         game (str): The current game.
     """

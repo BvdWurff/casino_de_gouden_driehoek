@@ -38,7 +38,7 @@ def manage_balance(current_user, fixed_costs=0.0, trigger="") -> str:
 
     Args:
         current_user (dict): The profile of the current user.
-        fixed_costs (int or float): The fixed casino costs.
+        fixed_costs (int or float): The total fixed casino costs.
         trigger (str): Indicates why or from where the balance menu was opened.
 
     Returns:
@@ -146,10 +146,10 @@ Huidig saldo: {format_currency(current_user["playing_balance"])}
 
                     return "end_program"
 
-                print("U heeft voldoende budget voor toegang tot het casino!")
+                print("Uw budget is voldoende voor toegang tot het casino.")
                 print(SEPARATOR)
                 print()
-                input("Druk op Enter om verder te gaan naar het hoofdmenu.")
+                input("Druk op Enter om verder te gaan naar de lobby.")
                 blank_lines(2)
 
                 return "continue"

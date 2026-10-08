@@ -32,20 +32,20 @@ from utils.constants import (
 # GAME INFORMATION
 # ==============================
 
-def show_game_instructions(trigger, game_instructions):
+def show_game_instructions(game, game_instructions):
     """
     Displays the instructions for the selected game.
 
     Args:
-        trigger (str): The current game.
+        game (str): The current game.
         game_instructions (str): The instructions for the selected game.
     """
     clear_terminal()
 
     print(f"""
-{trigger.capitalize()} - Speluitleg
+{game.capitalize()} - Speluitleg
 {SEPARATOR}
-Welkom bij de {trigger}.
+Welkom bij de {game}.
 
 {game_instructions}
 {SEPARATOR}
@@ -58,12 +58,12 @@ Welkom bij de {trigger}.
 # MENUS AND NAVIGATION
 # ==============================
 
-def get_game_action(trigger) -> str:
+def get_game_action(game) -> str:
     """
     Displays the stop menu and determines how the player wants to continue.
 
     Args:
-        trigger (str): The current game.
+        game (str): The current game.
 
     Returns:
         str: The selected action.
@@ -71,7 +71,7 @@ def get_game_action(trigger) -> str:
     clear_terminal()
 
     print(f"""
-{trigger.capitalize()} - Spelopties
+{game.capitalize()} - Spelopties
 {SEPARATOR}
 U heeft gekozen om het spel te stoppen.
 Wat wilt u doen?
@@ -103,13 +103,13 @@ Wat wilt u doen?
     return action
 
 
-def game_menu(current_user, trigger, game_instructions) -> str:
+def game_menu(current_user, game, game_instructions) -> str:
     """
     Displays the game menu and handles the selected menu option.
 
     Args:
         current_user (dict): The profile of the current user.
-        trigger (str): The current game.
+        game (str): The current game.
         game_instructions (str): The instructions for the selected game.
 
     Returns:
@@ -121,7 +121,7 @@ def game_menu(current_user, trigger, game_instructions) -> str:
         clear_terminal()
 
         print(f"""
-{trigger.capitalize()} - Spelmenu
+{game.capitalize()} - Spelmenu
 {SEPARATOR}
 1. Spel starten
 2. Spelinstructies
@@ -134,15 +134,15 @@ def game_menu(current_user, trigger, game_instructions) -> str:
         blank_lines(2)
 
         if menu_choice == 2:
-            show_game_instructions(trigger, game_instructions)
+            show_game_instructions(game, game_instructions)
             continue
 
         if menu_choice == 3:
-            manage_balance(current_user, trigger=trigger)
+            manage_balance(current_user, trigger=game)
             continue
 
         if menu_choice == 0:
-            action = get_game_action(trigger)
+            action = get_game_action(game)
 
             if action == "continue":
                 continue
@@ -152,14 +152,14 @@ def game_menu(current_user, trigger, game_instructions) -> str:
     return action
 
 
-def get_round_action(current_user, stake, trigger) -> str:
+def get_round_action(current_user, stake, game) -> str:
     """
     Displays the round menu and determines how the player wants to continue.
 
     Args:
         current_user (dict): The profile of the current user.
         stake (int or float): The current stake.
-        trigger (str): The current game.
+        game (str): The current game.
 
     Returns:
         str: The selected action.
@@ -168,7 +168,7 @@ def get_round_action(current_user, stake, trigger) -> str:
         clear_terminal()
 
         print(f"""
-{trigger.capitalize()} - Ronde-overzicht
+{game.capitalize()} - Ronde-overzicht
 {SEPARATOR}
 Huidig saldo:    {format_currency(current_user["playing_balance"])}
 Huidige inzet:   {format_currency(stake)}
@@ -188,7 +188,7 @@ Huidige inzet:   {format_currency(stake)}
             action = "change_stake"
 
         else:
-            action = get_game_action(trigger)
+            action = get_game_action(game)
 
             if action == "continue":
                 continue
@@ -202,13 +202,13 @@ Huidige inzet:   {format_currency(stake)}
 # STAKE AND BALANCE
 # ==============================
 
-def handle_insufficient_balance(current_user, trigger) -> str:
+def handle_insufficient_balance(current_user, game) -> str:
     """
     Handles a stake that exceeds the current playing balance.
 
     Args:
         current_user (dict): The profile of the current user.
-        trigger (str): The current game.
+        game (str): The current game.
 
     Returns:
         str: The selected action.
@@ -229,11 +229,11 @@ def handle_insufficient_balance(current_user, trigger) -> str:
 
         elif menu_choice == 2:
             blank_lines(2)
-            manage_balance(current_user, trigger=trigger)
+            manage_balance(current_user, trigger=game)
             action = "new_playing_balance"
 
         else:
-            action = get_game_action(trigger)
+            action = get_game_action(game)
 
             if action == "continue":
                 continue
@@ -243,14 +243,14 @@ def handle_insufficient_balance(current_user, trigger) -> str:
     return action
 
 
-def get_stake(current_user, stake, trigger, show_header=True) -> tuple[str, int | float]:
+def get_stake(current_user, stake, game, show_header=True) -> tuple[str, int | float]:
     """
     Requests and validates the player's stake.
 
     Args:
         current_user (dict): The profile of the current user.
         stake (int or float): The current stake.
-        trigger (str): The current game.
+        game (str): The current game.
         show_header (bool): Whether the stake screen header should be displayed.
 
     Returns:
@@ -263,7 +263,7 @@ def get_stake(current_user, stake, trigger, show_header=True) -> tuple[str, int 
             clear_terminal()
 
             print(f"""
-{trigger.capitalize()} - Inzet bepalen
+{game.capitalize()} - Inzet bepalen
 {SEPARATOR}
 Uw huidige saldo bedraagt {format_currency(current_user["playing_balance"])}.""")
 
@@ -287,7 +287,7 @@ Uw huidige saldo bedraagt {format_currency(current_user["playing_balance"])}."""
 
             if stake > current_user["playing_balance"]:
                 blank_lines(2)
-                action = handle_insufficient_balance(current_user, trigger)
+                action = handle_insufficient_balance(current_user, game)
 
                 if action in ("continue", "change_stake"):
                     continue
@@ -314,7 +314,7 @@ def show_game_results(current_user, game_result, game, payout, stake):
     Displays the result of a completed game round.
 
     Args:
-        current_user (dict): The profile of the user.
+        current_user (dict): The profile of the current user.
         game_result (str): The result of the game round.
         game (str): The current game.
         payout (int or float): The amount paid out to the player.
@@ -358,13 +358,13 @@ Helaas, u heeft {RED}verloren{RESET}.
 # GAME FLOW HELPERS
 # ==============================
 
-def prepare_game(current_user, trigger, game_instructions) -> tuple[str, int | float]:
+def prepare_game(current_user, game, game_instructions) -> tuple[str, int | float]:
     """
     Prepares a game by showing its instructions, handling its menu and setting a stake.
 
     Args:
         current_user (dict): The profile of the current user.
-        trigger (str): The current game.
+        game (str): The current game.
         game_instructions (str): The instructions for the selected game.
 
     Returns:
@@ -372,16 +372,16 @@ def prepare_game(current_user, trigger, game_instructions) -> tuple[str, int | f
     """
     stake = 0.0
 
-    show_game_instructions(trigger, game_instructions)
+    show_game_instructions(game, game_instructions)
 
     while True:
-        action = game_menu(current_user, trigger, game_instructions)
+        action = game_menu(current_user, game, game_instructions)
 
         if action in ("choose_game", "main_menu"):
             break
 
         if action == "change_stake":
-            action, stake = get_stake(current_user, stake, trigger)
+            action, stake = get_stake(current_user, stake, game)
 
             if action in ("choose_game", "main_menu"):
                 break
@@ -389,34 +389,34 @@ def prepare_game(current_user, trigger, game_instructions) -> tuple[str, int | f
             continue
 
         if stake == 0:
-            action, stake = get_stake(current_user, stake, trigger)
+            action, stake = get_stake(current_user, stake, game)
 
         break
 
     return action, stake
 
 
-def resolve_insufficient_balance(current_user, stake, trigger) -> tuple[str, int | float]:
+def resolve_insufficient_balance(current_user, stake, game) -> tuple[str, int | float]:
     """
     Resolves an insufficient balance and applies a requested stake change when needed.
 
     Args:
         current_user (dict): The profile of the current user.
         stake (int or float): The current stake.
-        trigger (str): The current game.
+        game (str): The current game.
 
     Returns:
         tuple: The action and updated stake.
     """
-    action = handle_insufficient_balance(current_user, trigger)
+    action = handle_insufficient_balance(current_user, game)
 
     if action == "change_stake":
-        action, stake = get_stake(current_user, stake, trigger)
+        action, stake = get_stake(current_user, stake, game)
 
     return action, stake
 
 
-def handle_round_setup(current_user, stake, action, trigger):
+def handle_round_setup(current_user, stake, action, game):
     """
     Handles the shared setup flow before starting a new game round.
 
@@ -427,7 +427,7 @@ def handle_round_setup(current_user, stake, action, trigger):
         current_user (dict): The profile of the current user.
         stake (int or float): The current stake.
         action (str): The current game action.
-        trigger (str): The current game.
+        game (str): The current game.
 
     Returns:
         tuple: The action and updated stake.
@@ -437,21 +437,21 @@ def handle_round_setup(current_user, stake, action, trigger):
             break
 
         if action == "change_stake":
-            action, stake = get_stake(current_user, stake, trigger, show_header=False)
+            action, stake = get_stake(current_user, stake, game, show_header=False)
 
             if action in ("choose_game", "main_menu"):
                 break
 
-            action = get_round_action(current_user, stake, trigger)
+            action = get_round_action(current_user, stake, game)
             continue
 
         if current_user["playing_balance"] < stake:
-            action, stake = resolve_insufficient_balance(current_user, stake, trigger)
+            action, stake = resolve_insufficient_balance(current_user, stake, game)
 
             if action in ("choose_game", "main_menu"):
                 break
 
-            action = get_round_action(current_user, stake, trigger)
+            action = get_round_action(current_user, stake, game)
 
             # Any balance or stake change must be confirmed before starting the round.
             continue
@@ -460,13 +460,35 @@ def handle_round_setup(current_user, stake, action, trigger):
 
     return action, stake
 
+
+# ==============================
+# GAME STATISTICS
+# ==============================
+
 def update_game_stats(current_user, game, trigger, game_result=""):
+    """
+    Updates the stored statistics for a game.
+
+    Args:
+        current_user (dict): The profile of the current user.
+        game (str): The current game.
+        trigger (str): Indicates which statistic should be updated.
+        game_result (str): The result of the completed round.
+    """
 
     if trigger == "game_started":
         if game not in current_user["played_games"]:
-            current_user["played_games"][game] = {"games_played":1, "rounds_played":0, "results":{"won":0, "lost":0, "draw":0}}
+            current_user["played_games"][game] = {
+                "games_played":1,
+                "rounds_played":0,
+                "results":{"won":0,
+                           "lost":0,
+                           "draw":0
+                           }
+            }
+
         else:
-            current_user["played_games"][game]["games_played"] +=1
+            current_user["played_games"][game]["games_played"] += 1
 
     if trigger == "round_completed":
         current_user["played_games"][game]["results"][game_result] += 1

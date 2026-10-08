@@ -25,7 +25,7 @@ from utils.constants import (
 
 
 # ==============================
-# AVAILABLE GAMES
+# CONFIGURATION
 # ==============================
 
 AVAILABLE_GAMES = {
@@ -73,4 +73,4 @@ def choose_game(current_user):
             blank_lines(2)
             break
 
-        # The "choose_game" action returns naturally to the game selection menu.
+        # The "choose_game" action naturally returns to this selection menu.

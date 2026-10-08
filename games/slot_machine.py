@@ -58,7 +58,7 @@ Uitbetaling:
 
 def process_spin_result(current_user, stake, spin_results, game):
     """
-    Processes the slot machine result, payout and updated playing balance.
+    Processes the slot machine result, calculates the payout and updates the playing balance.
 
     Args:
         current_user (dict): The profile of the current user.
@@ -77,10 +77,10 @@ def process_spin_result(current_user, stake, spin_results, game):
     matching_symbol = ""
     match_count = 0
 
-    for key, value in symbol_counts.items():
-        if value > match_count:
-            matching_symbol = key
-            match_count = value
+    for symbol, count in symbol_counts.items():
+        if count > match_count:
+            matching_symbol = symbol
+            match_count = count
 
     if match_count == 1:
         game_result = "lost"
@@ -99,7 +99,7 @@ def process_spin_result(current_user, stake, spin_results, game):
 
         game_result = "won"
 
-    show_game_results(current_user,game_result, game, payout, stake)
+    show_game_results(current_user, game_result, game, payout, stake)
 
 
 # ==============================
@@ -114,7 +114,7 @@ def get_symbol(symbol):
         symbol (str): The internal symbol name.
 
     Returns:
-        str: The symbol displayed to the player.
+    str: The display symbol for the slot machine.
     """
     match symbol:
         case "cherry":

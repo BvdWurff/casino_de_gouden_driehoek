@@ -10,7 +10,7 @@ from utils.game_utils import (
     handle_round_setup,
     prepare_game,
     show_game_results,
-    update_game_stats
+    update_game_stats,
 )
 from utils.utils import (
     clear_terminal,
@@ -100,7 +100,7 @@ def deal_cards(shoe, cards_until_shuffle: int):
 
     Args:
         shoe (list): The current blackjack shoe.
-        cards_until_shuffle (int): The number of cards remaining before shuffling.
+        cards_until_shuffle (int): The number of cards that can still be dealt before shuffling.
 
     Returns:
         tuple: The updated shoe, cards until shuffle, dealer hand
@@ -123,7 +123,7 @@ def draw_card(shoe, cards_until_shuffle: int, playing_hand):
 
     Args:
         shoe (list): The current blackjack shoe.
-        cards_until_shuffle (int): The number of cards remaining before shuffling.
+        cards_until_shuffle (int): The number of cards that can still be dealt before shuffling.
         playing_hand (list): The hand receiving the card.
 
     Returns:
@@ -254,7 +254,7 @@ def determine_game_result(player_status, player_hand_value, dealer_status, deale
     return game_result
 
 
-def process_payout(game_result, current_user, stake, game):
+def process_payout(current_user, game_result, stake, game):
     """
     Calculates the blackjack payout and updates the playing balance.
 
@@ -421,7 +421,7 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game):
 
     Args:
         shoe (list): The current blackjack shoe.
-        cards_until_shuffle (int): The number of cards remaining before shuffling.
+        cards_until_shuffle (int): The number of cards that can still be dealt before shuffling.
         player_hand (list): The player's current hand.
         dealer_hand (list): The dealer's current hand.
         game (str): The current game.
@@ -479,7 +479,7 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game):
                 elif dealer_card == "10":
                     high_card = "10"
                 else:
-                    high_card = False
+                    high_card = ""
 
                 if high_card:
                     print(
@@ -551,7 +551,7 @@ def play_dealer_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game):
 
     Args:
         shoe (list): The current blackjack shoe.
-        cards_until_shuffle (int): The number of cards remaining before shuffling.
+        cards_until_shuffle (int): The number of cards that can still be dealt before shuffling.
         player_hand (list): The player's final hand.
         dealer_hand (list): The dealer's current hand.
         game (str): The current game.
@@ -695,14 +695,9 @@ def play(current_user) -> str:
                 dealer_hand_value,
             ) = play_dealer_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game)
 
-        game_result = determine_game_result(
-            player_status,
-            player_hand_value,
-            dealer_status,
-            dealer_hand_value
-        )
+        game_result = determine_game_result(player_status, player_hand_value, dealer_status, dealer_hand_value)
 
-        process_payout(game_result, current_user, stake, game)
+        process_payout(current_user, game_result, stake, game)
         action = get_round_action(current_user, stake, game)
 
     return action

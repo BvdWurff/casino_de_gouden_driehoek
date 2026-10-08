@@ -1,15 +1,41 @@
 {
-    "bart85": {
-        "password": "test123",
+    "bart": {
+        "password": "123",
         "first_name": "Bart",
         "surname_prefix": "van der",
         "surname": "Wurff",
         "birth_date": "26-08-1985",
-        "gender": "Male",
-        "playing_balance": 100.0,
-        "source": "admin",
-        "visits": 0,
-        "played_games": {}
+        "gender": "man",
+        "playing_balance": 2350.0,
+        "source": "create_account",
+        "visits": 9,
+        "played_games": {
+            "roulettetafel": {
+                "games_played": 1,
+                "rounds_played": 4,
+                "results": {
+                    "won": 3,
+                    "lost": 1
+                }
+            },
+            "fruitmachine": {
+                "games_played": 1,
+                "rounds_played": 10,
+                "results": {
+                    "won": 9,
+                    "lost": 1
+                }
+            },
+            "blackjack": {
+                "games_played": 1,
+                "rounds_played": 0,
+                "results": {
+                    "won": 3,
+                    "lost": 4,
+                    "draw": 1
+                }
+            }
+        }
     },
     "bill42": {
         "password": "Monica",
@@ -82,43 +108,5 @@
         "source": "demo_data",
         "visits": 0,
         "played_games": {}
-    },
-    "bart": {
-        "password": "123",
-        "first_name": "Bart",
-        "surname_prefix": "van der",
-        "surname": "Wurff",
-        "birth_date": "26-08-1985",
-        "gender": "man",
-        "playing_balance": 2350.0,
-        "source": "create_account",
-        "visits": 9,
-        "played_games": {
-            "roulettetafel": {
-                "games_played": 1,
-                "rounds_played": 0,
-                "results": {
-                    "won": 3,
-                    "lost": 1
-                }
-            },
-            "fruitmachine": {
-                "games_played": 1,
-                "rounds_played": 0,
-                "results": {
-                    "won": 9,
-                    "lost": 1
-                }
-            },
-            "blackjack": {
-                "games_played": 1,
-                "rounds_played": 0,
-                "results": {
-                    "won": 3,
-                    "lost": 4,
-                    "draw": 1
-                }
-            }
-        }
     }
 }

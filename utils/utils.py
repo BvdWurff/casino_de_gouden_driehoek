@@ -83,7 +83,7 @@ def get_menu_choice(valid_choices):
     Requests and validates a numeric menu choice.
 
     Args:
-        valid_choices: The collection of allowed menu choices.
+        valid_choices (range or collection): The allowed menu choices.
 
     Returns:
         int: The validated menu choice.
@@ -101,7 +101,16 @@ def get_menu_choice(valid_choices):
 
         return menu_choice
 
+
 def print_message(message, color="", background=""):
+    """
+    Prints a formatted message with optional text and background colors.
+
+    Args:
+        message (str): The message to display.
+        color (str): The optional text color.
+        background (str): The optional background color.
+    """
     print(f"""
 {color}{background}{message}{RESET}
 """)

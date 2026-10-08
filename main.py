@@ -32,18 +32,46 @@ from utils.utils import (
 
 from utils.constants import (
     CASINO_NAME,
-    SEPARATOR, CONTINUE_PROMPT,
+    CONTINUE_PROMPT,
     RED,
+    SEPARATOR,
 )
 
 
 # ==============================
-# CONFIGURATION
-# ==============================
-
-
-# ==============================
 # OUTPUT
+# ==============================
+
+def show_parting_message(current_user=None, trigger=""):
+    """
+    Displays the checkout message and final playing balance.
+
+    Args:
+        current_user (dict or None): The profile of the current user.
+        trigger (str): Location the function is triggered from.
+    """
+    clear_terminal()
+
+    print(f"""
+{CASINO_NAME} - Vertrek
+{SEPARATOR}""")
+
+    if trigger == "start_page":
+        print(f"""U verlaat het casino.
+Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!
+{SEPARATOR}
+""")
+
+    elif current_user is not None:
+        print(f"""U verlaat het casino met een eindsaldo van {format_currency(current_user["playing_balance"])}.
+
+Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!
+{SEPARATOR}
+""")
+
+
+# ==============================
+# MENUS AND NAVIGATION
 # ==============================
 
 def show_login_page():
@@ -51,12 +79,11 @@ def show_login_page():
     Displays the casino welcome message and login menu
 
     Returns:
-        tuple: The current user, starting balance and trigger.
+        tuple: The current user and starting balance.
     """
     while True:
         clear_terminal()
 
-        trigger = "startpagina"
         starting_balance = 0.0
         current_user = {}
 
@@ -85,65 +112,38 @@ of in PyCharm “Emulate terminal in output console” in te schakelen.
                 continue
 
             current_user = logged_in_user
-            trigger = "login"
             break
 
+
         elif menu_choice == 2:
-            create_profile()
-            trigger = "create_profile"
-            continue
+            current_user = create_profile()
+
+            if current_user is None:
+                continue
+
+            starting_balance = current_user["playing_balance"]
+            current_user["visits"] += 1
+            break
 
         elif menu_choice == 0:
             confirmation = get_confirmation("stoppen")
 
             if confirmation:
                 blank_lines(2)
-                show_parting_message(trigger=trigger)
+                show_parting_message(trigger="start_page")
                 exit(0)
 
             blank_lines(2)
 
-    return current_user, starting_balance, trigger
+    return current_user, starting_balance,
 
-
-def show_parting_message(current_user=None, trigger=""):
-    """
-    Displays the checkout message and final playing balance.
-
-    Args:
-        current_user (dict or None): The profile of the current user.
-        trigger (str): Location the function is triggered from.
-    """
-    clear_terminal()
-
-    print(f"""
-{CASINO_NAME} - Vertrek
-{SEPARATOR}""")
-
-    if trigger == "startpagina":
-        print(f"""U verlaat het casino.
-Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!
-{SEPARATOR}
-""")
-
-    elif current_user is not None:
-        print(f"""U verlaat het casino met een eindsaldo van {format_currency(current_user["playing_balance"])}.
-
-Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!
-{SEPARATOR}
-""")
-
-
-# ==============================
-# MENUS
-# ==============================
 
 def main_menu(current_user):
     """
     Displays the main menu and handles the selected menu options.
 
     Args:
-        current_user (dict): The profile of the user.
+        current_user (dict): The profile of the current user.
     """
     while True:
         clear_terminal()
@@ -194,7 +194,7 @@ def main():
     """
     Controls the main program flow.
     """
-    current_user, starting_balance, trigger = show_login_page()
+    current_user, starting_balance = show_login_page()
     vat_amount, fixed_costs = calculate_costs()
 
     if current_user["visits"] == 1:
@@ -211,16 +211,14 @@ def main():
         )
 
     else:
-        balance_status, balance_status_text = determine_balance_status(current_user)
+        balance_status, _ = determine_balance_status(current_user)
 
     while True:
         if balance_status == "sufficient":
             current_user = main_menu(current_user)
             break
 
-        trigger = "insufficient_starting_balance"
-
-        action = manage_balance(current_user, fixed_costs=fixed_costs, trigger=trigger)
+        action = manage_balance(current_user, fixed_costs=fixed_costs, trigger="insufficient_starting_balance")
 
         if action == "end_program":
             break
