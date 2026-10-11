@@ -8,11 +8,20 @@ import datetime
 import copy
 from getpass import getpass
 
+from rich.console import Console
+from rich.padding import Padding
+from rich.panel import Panel
+from rich.live import Live
+from rich.spinner import Spinner
+from rich.console import Group
+
+
 from utils.utils import (
     clear_terminal,
     get_menu_choice,
     print_message,
     format_currency,
+    get_input,
 )
 
 
@@ -25,14 +34,18 @@ from utils.constants import (
     CONTINUE_PROMPT,
     INVALID_INPUT,
     SEPARATOR,
-    GREEN,
-    RED,
     ADMISSION_PRICE,
     SERVICE_FEE,
     MANDATORY_DRINK_PRICE,
     VAT_RATE,
     MIN_AGE,
 )
+
+# ==============================
+# CONFIGURATION
+# ==============================
+
+console = Console(width=100)
 
 
 # ==============================
@@ -129,18 +142,20 @@ def check_age(birth_date) -> str:
         minimum_age_birthday = birth_date.replace(year=minimum_age_year)
 
     if current_date < minimum_age_birthday:
-        clear_terminal()
-
-        print(f"""
-    De minimale leeftijd voor {CASINO_NAME} is {MIN_AGE} jaar.
-    U heeft deze leeftijd nog niet bereikt.
-
-    U bent van harte welkom vanaf {minimum_age_birthday.strftime("%d-%m-%Y")}.
-    {SEPARATOR}
-    """)
-
-        input(CONTINUE_PROMPT)
         print()
+        console.print(
+            Padding(
+                Panel(
+                    f"De minimale leeftijd voor {CASINO_NAME} is {MIN_AGE} jaar.\n"
+                    "U heeft deze leeftijd nog niet bereikt.\n"
+                    f"U bent van harte welkom vanaf {minimum_age_birthday.strftime("%d-%m-%Y")}.",
+                    border_style="red",
+                ),
+            (0, 5),
+            )
+        )
+        print()
+        get_input(CONTINUE_PROMPT)
 
         return "underage"
 
@@ -260,69 +275,85 @@ def login(current_user):
     """
     while True:
         clear_terminal()
+
+        page_name = "Inloggen"
         profile = {}
 
-        print(f"""
-{CASINO_NAME} - Inlogpagina
-{SEPARATOR}
-""")
+        console.print(
+            Padding(
+                Panel(
+                    "Geef uw gebruikersnaam en wachtwoord op om in te loggen.",
+                    title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
+                    border_style="bright_yellow",
+                    padding=(1, 2),
+                ),
+                (1, 5))
+        )
 
         while True:
-            username = input("Gebruikersnaam: ").lower()
+            username = get_input("Gebruikersnaam: ").lower()
 
             if username:
                 break
 
-            print(INVALID_INPUT)
+            print_message(INVALID_INPUT, "red")
 
         while True:
-            password = getpass("Wachtwoord: ")
+            password = console.input(f"{' ' * 5}[bright_white]Wachtwoord: [/]", password=True)
 
             if password:
                 break
 
-            print(INVALID_INPUT)
+            print_message(INVALID_INPUT, "red")
 
         print()
-        print(SEPARATOR)
-        input("Druk op Enter om in te loggen.")
-
-        print()
-        time.sleep(1)
-        print(".", end="")
-        time.sleep(1)
-        print(".", end="")
-        time.sleep(1)
-        print(".", end="\n")
-        time.sleep(0.5)
+        with Live(
+                Padding.indent(
+                    Spinner(
+                        "dots",
+                        text="[bright_yellow]Inloggen, even geduld...[/]",
+                        style="bright_yellow"
+                    ),
+                    5
+                ),
+                console=console,
+                transient=True
+        ):
+            time.sleep(2)
 
         if username not in profiles:
             username = ""
-            print_message("Onbekende gebruikersnaam.", RED)
+            print_message("Onbekende gebruikersnaam.", "red")
 
         else:
             profile = profiles[username]
 
             if password != profile["password"]:
                 password = ""
-                print_message("Ongeldig wachtwoord.", RED)
+                print_message("Ongeldig wachtwoord.", "red")
 
         if username and password:
             if not current_user:
-                print_message("U bent succesvol ingelogd.", GREEN)
+                print_message("U bent succesvol ingelogd.", "green")
             else:
                 save_profiles(current_user)
-                print_message("U bent succesvol van profiel gewisseld.", GREEN)
+                print_message("U bent succesvol van profiel gewisseld.", "green")
 
-            input(CONTINUE_PROMPT)
+            get_input(CONTINUE_PROMPT)
             break
 
         else:
-            print(f"""{SEPARATOR}
-1. Nogmaals proberen
-2. Profiel aanmaken
-0. Terug
-{SEPARATOR}""")
+            console.print(
+                Padding(
+                    Panel(
+                        "1. Nogmaals proberen\n"
+                        "2. Profiel aanmaken\n\n"
+                        "0. Terug",
+                        border_style="bright_yellow",
+                        padding=(1, 2),
+                    ),
+                    (1, 5))
+            )
 
             menu_choice = get_menu_choice(range(0, 3))
 
@@ -361,85 +392,85 @@ def create_profile() -> dict | None:
     Returns:
         dict or None: The newly created user profile, or None when registration is cancelled.
     """
+    clear_terminal()
+
+    page_name = "Registreren"
     birth_date = None
     starting_balance = 0.0
 
-    clear_terminal()
-
-    print(f"""
-{CASINO_NAME} - Registreren
-{SEPARATOR}
-
-Vul onderstaande gegevens in om een profiel aan te maken.
-
-{SEPARATOR}
-""")
+    console.print(
+        Padding(
+            Panel(
+                "Vul onderstaande gegevens in om een profiel aan te maken.",
+                title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
+                border_style="bright_yellow",
+                padding=(1, 2),
+            ),
+            (1, 5))
+    )
 
     while True:
-        username = input("Kies een gebruikersnaam: ").lower()
+        username = get_input("Kies een gebruikersnaam: ").lower()
 
         if username:
             if username in profiles:
-                print_message("Gebruikersnaam al in gebruik.", RED)
+                print_message("Gebruikersnaam al in gebruik.", "red")
                 continue
 
             break
 
-        print(INVALID_INPUT)
+        print_message(INVALID_INPUT, "red")
 
     while True:
-        password = getpass("Kies een wachtwoord: ")
+        password = console.input(f"{' ' * 5}[bright_white]Kies een wachtwoord: [/]", password=True)
 
         if password:
-            confirm_password = getpass("Bevestig het wachtwoord: ")
+            confirm_password = console.input(f"{' ' * 5}[bright_white]Bevestig het wachtwoord: [/]", password=True)
 
             if password == confirm_password:
                 break
 
             else:
-                print_message("Wachtwoorden komen niet overeen.", RED)
+                print_message("Wachtwoorden komen niet overeen.", "red")
                 continue
 
     while True:
-        first_name = input("Wat is uw voornaam? ").title()
+        first_name = get_input("Wat is uw voornaam? ").title()
 
         if first_name.replace("-", "").replace(" ", "").isalpha():
             break
 
-        print(INVALID_INPUT)
+        print_message(INVALID_INPUT, "red")
 
     while True:
-        surname_prefix = input(
-            "Wat zijn uw tussenvoegsels? "
-            "(druk op Enter indien niet van toepassing) "
-        )
+        surname_prefix = get_input("Wat zijn uw tussenvoegsels? (druk op Enter indien niet van toepassing)")
 
         if not surname_prefix or surname_prefix.replace(" ", "").isalpha():
             break
 
-        print(INVALID_INPUT)
+        print_message(INVALID_INPUT, "red")
 
     while True:
-        surname = input("Wat is uw achternaam? ").title()
+        surname = get_input("Wat is uw achternaam? ").title()
 
         if surname.replace("-", "").replace(" ", "").isalpha():
             break
 
-        print(INVALID_INPUT)
+        print_message(INVALID_INPUT, "red")
 
     while True:
-        birth_date_input = input("Wat is uw geboortedatum? (dd-mm-jjjj) ")
+        birth_date_input = get_input("Wat is uw geboortedatum? (dd-mm-jjjj) ")
 
         try:
             birth_date = datetime.datetime.strptime(birth_date_input, "%d-%m-%Y")
         except ValueError:
-            print(INVALID_INPUT)
+            print_message(INVALID_INPUT, "red")
             continue
 
         current_date = datetime.datetime.now()
 
         if current_date < birth_date:
-            print(INVALID_INPUT)
+            print_message(INVALID_INPUT, "red")
             continue
 
         age_status = check_age(birth_date)
@@ -451,26 +482,39 @@ Vul onderstaande gegevens in om een profiel aan te maken.
         break
 
     while True:
-        gender = input("Wat is uw geslacht? (bijv. Man/Vrouw/Anders) ").lower()
+        gender = get_input("Wat is uw geslacht? (bijv. Man/Vrouw/Anders) ").lower()
 
         if gender:
             break
 
-        print(INVALID_INPUT)
+        print_message(INVALID_INPUT, "red")
 
     while True:
         try:
-            starting_balance = round(float(input("Wat is uw speelbudget? € ")), 2)
+            starting_balance = round(float(get_input("Wat is uw speelbudget? € ")), 2)
         except ValueError:
-            print(INVALID_INPUT)
+            print_message(INVALID_INPUT, "red")
             continue
 
         if starting_balance > 0:
             break
 
-        print(INVALID_INPUT)
+        print_message(INVALID_INPUT, "red")
 
-    print(SEPARATOR)
+    print()
+    with Live(
+            Padding.indent(
+                Spinner(
+                    "dots",
+                    text="[bright_yellow]Account wordt aangemaakt, even geduld...[/]",
+                    style="bright_yellow"
+                ),
+                5
+            ),
+            console=console,
+            transient=True
+    ):
+        time.sleep(2)
 
     current_user = {
         "username": username,
@@ -490,8 +534,8 @@ Vul onderstaande gegevens in om een profiel aan te maken.
 
     current_user = build_player_profile(current_user, username)
 
-    print_message("Profiel succesvol aangemaakt.", GREEN)
-    input(CONTINUE_PROMPT)
+    print_message("Profiel succesvol aangemaakt.", "green")
+    get_input(CONTINUE_PROMPT)
 
     return current_user
 
@@ -535,14 +579,14 @@ def delete_profile(current_user):
 
             print(SEPARATOR)
             print()
-            input(CONTINUE_PROMPT)
+            get_input(CONTINUE_PROMPT)
 
             continue
 
         elif menu_choice == 2:
             if len(profiles) == 1:
-                print_message("Het enige overgebleven profiel kan niet worden verwijderd.", RED)
-                input(CONTINUE_PROMPT)
+                print_message("Het enige overgebleven profiel kan niet worden verwijderd.", "red")
+                get_input(CONTINUE_PROMPT)
                 continue
 
             profile = {}
@@ -552,11 +596,11 @@ def delete_profile(current_user):
                 username = input("Welk profiel wilt u verwijderen? ").lower()
 
                 if username not in profiles:
-                    print_message("Onbekende gebruikersnaam.", RED)
+                    print_message("Onbekende gebruikersnaam.", "red")
                     continue
 
                 if username == current_user["username"]:
-                    print_message("U kunt het profiel waarop u momenteel bent ingelogd niet verwijderen.", RED)
+                    print_message("U kunt het profiel waarop u momenteel bent ingelogd niet verwijderen.", "red")
                     continue
 
                 profile = profiles[username]
@@ -566,7 +610,7 @@ def delete_profile(current_user):
                 password = getpass("Wachtwoord van profiel: ")
 
                 if password != profile["password"]:
-                    print_message("Ongeldig wachtwoord.", RED)
+                    print_message("Ongeldig wachtwoord.", "red")
                     continue
 
                 break
@@ -576,7 +620,7 @@ def delete_profile(current_user):
                 confirmation_choice = input("Weet u zeker dat u dit profiel wilt verwijderen? (Ja/Nee) ").lower()
 
                 if confirmation_choice not in ("ja", "nee"):
-                    print(INVALID_INPUT)
+                    print_message(INVALID_INPUT, "red")
                     continue
 
                 break
@@ -585,8 +629,8 @@ def delete_profile(current_user):
                 del profiles[username]
                 save_profiles(current_user)
 
-                print_message("Profiel succesvol verwijderd.", GREEN)
-                input(CONTINUE_PROMPT)
+                print_message("Profiel succesvol verwijderd.", "green")
+                get_input(CONTINUE_PROMPT)
 
             continue
 
@@ -610,7 +654,7 @@ def reset_password(current_user):
         password = getpass("Huidige wachtwoord: ")
 
         if password != current_user["password"]:
-            print_message("Ongeldig wachtwoord.", RED)
+            print_message("Ongeldig wachtwoord.", "red")
             continue
 
         break
@@ -619,11 +663,11 @@ def reset_password(current_user):
         new_password = getpass("Nieuw wachtwoord: ")
 
         if not new_password:
-            print_message("Wachtwoord mag niet leeg zijn.", RED)
+            print_message("Wachtwoord mag niet leeg zijn.", "red")
             continue
 
         if password == new_password:
-            print_message("Nieuw wachtwoord mag niet gelijk zijn aan huidige wachtwoord.", RED)
+            print_message("Nieuw wachtwoord mag niet gelijk zijn aan huidige wachtwoord.", "red")
             continue
 
         break
@@ -632,14 +676,14 @@ def reset_password(current_user):
         confirm_new_password = getpass("Bevestig nieuw wachtwoord: ")
 
         if confirm_new_password != new_password:
-            print_message("Wachtwoorden komen niet overeen.", RED)
+            print_message("Wachtwoorden komen niet overeen.", "red")
             continue
 
         current_user["password"] = new_password
-        print_message("Wachtwoord succesvol gewijzigd.", GREEN)
+        print_message("Wachtwoord succesvol gewijzigd.", "green")
         break
 
-    input(CONTINUE_PROMPT)
+    get_input(CONTINUE_PROMPT)
 
 
 # ==============================
@@ -676,7 +720,7 @@ Gespeelde spellen:  {played_games}
 {SEPARATOR}
 """)
 
-    input(CONTINUE_PROMPT)
+    get_input(CONTINUE_PROMPT)
 
 
 def show_game_statistics(current_user):
@@ -709,7 +753,7 @@ def show_game_statistics(current_user):
 {SEPARATOR}""")
 
     print()
-    input(CONTINUE_PROMPT)
+    get_input(CONTINUE_PROMPT)
 
 
 def show_all_profiles(current_user):
@@ -741,7 +785,7 @@ def show_all_profiles(current_user):
 {SEPARATOR}""")
 
     print()
-    input(CONTINUE_PROMPT)
+    get_input(CONTINUE_PROMPT)
 
 
 def show_registration_summary(
@@ -803,16 +847,24 @@ def show_welcome_message(current_user):
     """
     clear_terminal()
 
-    print(f"""
-{CASINO_NAME} - Welkomstpagina
-{SEPARATOR}
-Welkom terug, {current_user["salutation"]}!
+    page_name = "Welkomstpagina"
 
-Uw huidige saldo is {format_currency(current_user["playing_balance"])}.
-{SEPARATOR}
-""")
+    console.print(
+        Padding(
+            Group(
+                Panel(
+                    f"Welkom terug, {current_user["salutation"]}!\n\n"
+                    f"Uw huidige saldo is {format_currency(current_user["playing_balance"])}",
+                    title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
+                    border_style="bright_yellow",
+                    padding=(1, 2),
+                ),
+                f"\n[bright_white]{CONTINUE_PROMPT}[/]",
+            ),
+            (1, 5))
+    )
 
-    input(CONTINUE_PROMPT)
+    input()
 
 
 # ==============================

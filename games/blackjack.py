@@ -15,6 +15,7 @@ from utils.game_utils import (
 from utils.utils import (
     clear_terminal,
     get_menu_choice,
+    get_input,
 )
 
 
@@ -408,7 +409,7 @@ def show_initial_deal(player_hand, dealer_hand, game):
     time.sleep(1)
     print(SEPARATOR)
     print()
-    input(CONTINUE_PROMPT)
+    get_input(CONTINUE_PROMPT)
 
 
 # ==============================
@@ -446,21 +447,21 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game):
         if player_status == "bust":
             print(f"U heeft {int(player_hand_values)}. Player bust!")
             print()
-            input(CONTINUE_PROMPT)
+            get_input(CONTINUE_PROMPT)
 
             break
 
         elif player_status == "blackjack":
             print("U heeft blackjack!")
             print()
-            input(CONTINUE_PROMPT)
+            get_input(CONTINUE_PROMPT)
 
             break
 
         elif player_status == "stand":
             print("U heeft 21!")
             print()
-            input(CONTINUE_PROMPT)
+            get_input(CONTINUE_PROMPT)
 
             break
 
@@ -500,7 +501,7 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game):
                         print()
                         print("Dealer heeft blackjack!")
                         print()
-                        input(CONTINUE_PROMPT)
+                        get_input(CONTINUE_PROMPT)
 
                         player_status = "dealer_blackjack"
                         player_hand_values = player_hand_values[-2:]
@@ -524,7 +525,7 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game):
                 shoe, cards_until_shuffle, player_hand = draw_card(shoe, cards_until_shuffle, player_hand)
                 print(f"U ontvangt een extra kaart: {format_hand([player_hand[-1]])}")
                 print()
-                input(CONTINUE_PROMPT)
+                get_input(CONTINUE_PROMPT)
 
                 first_turn = False
                 continue
@@ -536,7 +537,7 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game):
                 print()
                 print(f"U heeft stand gekozen met {player_hand_values}. De beurt is aan de dealer.")
                 print()
-                input(CONTINUE_PROMPT)
+                get_input(CONTINUE_PROMPT)
 
                 player_status = "stand"
 
@@ -571,7 +572,7 @@ De dealer onthult de gesloten kaart: {format_hand([dealer_hand[1]])}
 {SEPARATOR}
 """)
 
-    input(CONTINUE_PROMPT)
+    get_input(CONTINUE_PROMPT)
 
     while True:
         (
@@ -587,12 +588,12 @@ De dealer onthult de gesloten kaart: {format_hand([dealer_hand[1]])}
             if dealer_status == "blackjack":
                 print("Speler en dealer hebben beide blackjack! Push!")
                 print()
-                input(CONTINUE_PROMPT)
+                get_input(CONTINUE_PROMPT)
 
             else:
                 print("Dealer heeft geen blackjack.")
                 print()
-                input(CONTINUE_PROMPT)
+                get_input(CONTINUE_PROMPT)
 
                 dealer_status = "no_blackjack"
 
@@ -602,19 +603,19 @@ De dealer onthult de gesloten kaart: {format_hand([dealer_hand[1]])}
             shoe, cards_until_shuffle, dealer_hand = draw_card(shoe, cards_until_shuffle, dealer_hand)
             print(f"Dealer ontvangt een extra kaart: {format_hand([dealer_hand[-1]])}")
             print()
-            input(CONTINUE_PROMPT)
+            get_input(CONTINUE_PROMPT)
 
             continue
 
         elif dealer_status == "blackjack":
             print("Dealer heeft blackjack!")
             print()
-            input(CONTINUE_PROMPT)
+            get_input(CONTINUE_PROMPT)
 
         elif dealer_status == "bust":
             print(f"Handwaarde is {dealer_hand_values}. Dealer bust!")
             print()
-            input(CONTINUE_PROMPT)
+            get_input(CONTINUE_PROMPT)
 
         else:
             if "," in dealer_hand_values:
@@ -622,7 +623,7 @@ De dealer onthult de gesloten kaart: {format_hand([dealer_hand[1]])}
 
             print(f"Handwaarde is {dealer_hand_values}. Dealer stand!")
             print()
-            input(CONTINUE_PROMPT)
+            get_input(CONTINUE_PROMPT)
 
             dealer_status = "stand"
 

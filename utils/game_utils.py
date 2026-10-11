@@ -10,6 +10,8 @@ from utils.utils import (
     clear_terminal,
     format_currency,
     get_menu_choice,
+    print_message,
+    get_input,
 )
 
 
@@ -51,7 +53,7 @@ Welkom bij de {game}.
 {SEPARATOR}
 """)
 
-    input(CONTINUE_PROMPT)
+    get_input(CONTINUE_PROMPT)
 
 
 # ==============================
@@ -276,7 +278,7 @@ Uw huidige saldo bedraagt {format_currency(current_user["playing_balance"])}."""
             try:
                 stake = round(float(input("Hoeveel wilt u inzetten? € ")), 2)
             except ValueError:
-                print(INVALID_INPUT)
+                print_message(INVALID_INPUT, "red")
                 continue
 
             if stake <= 0:
@@ -349,7 +351,7 @@ Helaas, u heeft {RED}verloren{RESET}.
 {SEPARATOR}
 """)
 
-    input(CONTINUE_PROMPT)
+    get_input(CONTINUE_PROMPT)
 
     update_game_stats(current_user, game, "round_completed", game_result)
 

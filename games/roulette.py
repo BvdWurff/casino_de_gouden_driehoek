@@ -19,6 +19,8 @@ from utils.utils import (
     clear_terminal,
     format_currency,
     get_menu_choice,
+    print_message,
+    get_input,
 )
 
 
@@ -74,13 +76,13 @@ def select_number():
         try:
             selected_number = int(input("Op welk nummer wilt u inzetten? (0 t/m 36) "))
         except ValueError:
-            print(INVALID_INPUT)
+            print_message(INVALID_INPUT, "red")
             continue
 
         if 0 <= selected_number <= 36:
             return selected_number
 
-        print(INVALID_INPUT)
+        print_message(INVALID_INPUT, "red")
 
 
 def get_bet_choice(recent_results, game):
@@ -506,7 +508,7 @@ def show_spin_result(spin_result, color, game):
     print()
     print(SEPARATOR)
     print()
-    input(CONTINUE_PROMPT)
+    get_input(CONTINUE_PROMPT)
 
 
 # ==============================

@@ -5,6 +5,9 @@
 import os
 import subprocess
 
+from rich.console import Console
+from rich.padding import Padding
+
 # ==============================
 # CONSTANTS
 # ==============================
@@ -14,6 +17,12 @@ from utils.constants import (
     INVALID_INPUT,
     RESET,
 )
+
+# ==============================
+# CONFIGURATION
+# ==============================
+
+console = Console(width=100)
 
 
 # ==============================
@@ -69,10 +78,10 @@ def get_confirmation(action):
         bool: True when the action is confirmed, otherwise False.
     """
     while True:
-        confirmation_choice = input(f"Weet u zeker dat u wilt {action}? (Ja/Nee) ").lower()
+        confirmation_choice = console.input(f"{' ' * 5}[bright_white]Weet u zeker dat u wilt {action}? (Ja/Nee)[/] ").lower()
 
         if confirmation_choice not in ("ja", "nee"):
-            print(INVALID_INPUT)
+            print_message(INVALID_INPUT, "red")
             continue
 
         return confirmation_choice == "ja"
@@ -90,28 +99,35 @@ def get_menu_choice(valid_choices):
     """
     while True:
         try:
-            menu_choice = int(input(CHOOSE_OPTION))
+            menu_choice = int(console.input(f"{' ' * 5}[bright_white]{CHOOSE_OPTION}[/]"))
+
         except ValueError:
-            print(INVALID_INPUT)
+            print_message(INVALID_INPUT, "red")
             continue
 
         if menu_choice not in valid_choices:
-            print(INVALID_INPUT)
+            print_message(INVALID_INPUT, "red")
             continue
 
+        print()
         return menu_choice
 
 
-def print_message(message, color="", background=""):
+def print_message(message, color=""):
     """
     Prints a formatted message with optional text and background colors.
 
     Args:
         message (str): The message to display.
         color (str): The optional text color.
-        background (str): The optional background color.
     """
-    print(f"""
-{color}{background}{message}{RESET}
-""")
+
+    console.print(
+        Padding(f"{message}", (0, 5)),
+        style=f"{color}",
+    )
+
+def get_input(message, color="bright_white"):
+    return console.input(f"{' ' * 5}[{color}]{message}[/]")
+
 

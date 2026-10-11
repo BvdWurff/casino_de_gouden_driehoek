@@ -9,6 +9,8 @@ from utils.utils import (
     clear_terminal,
     format_currency,
     get_menu_choice,
+    print_message,
+    get_input,
 )
 
 
@@ -65,11 +67,11 @@ Huidig saldo: {format_currency(current_user["playing_balance"])}
                 try:
                     amount = round(float(input("Hoeveel wilt u storten? € ")), 2)
                 except ValueError:
-                    print(INVALID_INPUT)
+                    print_message(INVALID_INPUT, "red")
                     continue
 
                 if amount < 0:
-                    print(INVALID_INPUT)
+                    print_message(INVALID_INPUT, "red")
                     continue
 
                 if amount == 0:
@@ -95,7 +97,7 @@ Huidig saldo: {format_currency(current_user["playing_balance"])}
                 print()
                 print("U heeft onvoldoende saldo voor deze opname.")
                 print()
-                input(CONTINUE_PROMPT)
+                get_input(CONTINUE_PROMPT)
                 blank_lines(2)
 
             else:
@@ -103,11 +105,11 @@ Huidig saldo: {format_currency(current_user["playing_balance"])}
                     try:
                         amount = round(float(input("Hoeveel wilt u opnemen? € ")), 2)
                     except ValueError:
-                        print(INVALID_INPUT)
+                        print_message(INVALID_INPUT, "red")
                         continue
 
                     if amount < 0:
-                        print(INVALID_INPUT)
+                        print_message(INVALID_INPUT, "red")
                         continue
 
                     if amount == 0:
@@ -121,7 +123,7 @@ Huidig saldo: {format_currency(current_user["playing_balance"])}
                         print()
                         print("U heeft onvoldoende saldo voor deze opname.")
                         print()
-                        input(CONTINUE_PROMPT)
+                        get_input(CONTINUE_PROMPT)
                         continue
 
                     current_user["playing_balance"] = round(current_user["playing_balance"] - amount, 2)

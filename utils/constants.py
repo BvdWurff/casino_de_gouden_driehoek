@@ -11,7 +11,7 @@ SEPARATOR = "-" * 50
 # ==============================
 
 INVALID_INPUT = "\nOngeldige invoer. Probeer het opnieuw.\n"
-CONTINUE_PROMPT = "Druk op Enter om verder te gaan.\n"
+CONTINUE_PROMPT = "Druk op Enter om verder te gaan."
 CHOOSE_OPTION = "Kies een optie: "
 
 
