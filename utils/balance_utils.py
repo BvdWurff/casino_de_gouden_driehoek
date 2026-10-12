@@ -4,6 +4,13 @@
 
 import time
 
+from rich.console import Console
+from rich.padding import Padding
+from rich.panel import Panel
+from rich.live import Live
+from rich.spinner import Spinner
+from rich.console import Group
+
 from utils.utils import (
     blank_lines,
     clear_terminal,
@@ -31,6 +38,13 @@ from utils.constants import (
 
 
 # ==============================
+# CONFIGURATION
+# ==============================
+
+console = Console(width=100)
+
+
+# ==============================
 # BALANCE MANAGEMENT
 # ==============================
 
@@ -49,15 +63,20 @@ def manage_balance(current_user, fixed_costs=0.0, trigger="") -> str:
     while True:
         clear_terminal()
 
-        print(f"""
-{CASINO_NAME} - Saldo-overzicht
-{SEPARATOR}
-Huidig saldo: {format_currency(current_user["playing_balance"])}
+        page_name = "Saldo-overzicht"
 
-1. Saldo storten
-2. Saldo opnemen
-0. Terug
-{SEPARATOR}""")
+        console.print(
+            Padding(
+                Panel(
+                    "1. Saldo storten\n"
+                    "2. Saldo opnemen\n\n"
+                    "0. Terug",
+                    title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
+                    border_style="bright_yellow",
+                    padding=(1, 2),
+                ),
+                (1, 5))
+        )
 
         menu_choice = get_menu_choice(range(0, 3))
         print()
@@ -65,7 +84,7 @@ Huidig saldo: {format_currency(current_user["playing_balance"])}
         if menu_choice == 1:
             while True:
                 try:
-                    amount = round(float(input("Hoeveel wilt u storten? € ")), 2)
+                    amount = round(float(get_input("Hoeveel wilt u storten? € ")), 2)
                 except ValueError:
                     print_message(INVALID_INPUT, "red")
                     continue
@@ -75,35 +94,45 @@ Huidig saldo: {format_currency(current_user["playing_balance"])}
                     continue
 
                 if amount == 0:
-                    print("U keert terug naar het saldo-overzicht.")
+                    print_message("U keert terug naar het saldo-overzicht.")
                     blank_lines(2)
                     time.sleep(1)
                     break
 
                 current_user["playing_balance"] = round(current_user["playing_balance"] + amount, 2)
 
-                time.sleep(1)
                 print()
-                print("...")
-                time.sleep(1)
+
+                with Live(
+                        Padding.indent(
+                            Spinner(
+                                "dots",
+                                text="[bright_yellow]Verwerken, even geduld...[/]",
+                                style="bright_yellow"
+                            ),
+                            5
+                        ),
+                        console=console,
+                        transient=True
+                ):
+                    time.sleep(2)
+
+                print_message("Het bedrag is succesvol gestort.", "green")
                 print()
-                print("Het bedrag is succesvol gestort.")
-                blank_lines(2)
-                input("Druk op Enter om terug te keren naar het saldo-overzicht.")
+                get_input("Druk op Enter om terug te keren naar het saldo-overzicht.")
                 break
 
         elif menu_choice == 2:
             if current_user["playing_balance"] <= 0:
                 print()
-                print("U heeft onvoldoende saldo voor deze opname.")
+                print_message("U heeft onvoldoende saldo voor deze opname.", "red")
                 print()
                 get_input(CONTINUE_PROMPT)
-                blank_lines(2)
 
             else:
                 while True:
                     try:
-                        amount = round(float(input("Hoeveel wilt u opnemen? € ")), 2)
+                        amount = round(float(get_input("Hoeveel wilt u opnemen? € ")), 2)
                     except ValueError:
                         print_message(INVALID_INPUT, "red")
                         continue
@@ -114,28 +143,38 @@ Huidig saldo: {format_currency(current_user["playing_balance"])}
 
                     if amount == 0:
                         print()
-                        print("U keert terug naar het saldo-overzicht.")
-                        blank_lines(2)
+                        print_message("U keert terug naar het saldo-overzicht.")
                         time.sleep(1)
                         break
 
                     if amount > current_user["playing_balance"]:
                         print()
-                        print("U heeft onvoldoende saldo voor deze opname.")
+                        print_message("U heeft onvoldoende saldo voor deze opname.", "red")
                         print()
                         get_input(CONTINUE_PROMPT)
                         continue
 
                     current_user["playing_balance"] = round(current_user["playing_balance"] - amount, 2)
 
-                    time.sleep(1)
                     print()
-                    print("...")
-                    time.sleep(1)
+
+                    with Live(
+                            Padding.indent(
+                                Spinner(
+                                    "dots",
+                                    text="[bright_yellow]Verwerken, even geduld...[/]",
+                                    style="bright_yellow"
+                                ),
+                                5
+                            ),
+                            console=console,
+                            transient=True
+                    ):
+                        time.sleep(2)
+
+                    print_message("Het bedrag is succesvol opgenomen.", "green")
                     print()
-                    print("Het bedrag is succesvol opgenomen.")
-                    blank_lines(2)
-                    input("Druk op Enter om terug te keren naar het saldo-overzicht.")
+                    get_input("Druk op Enter om terug te keren naar het saldo-overzicht.")
                     break
 
         elif menu_choice == 0:
@@ -143,16 +182,13 @@ Huidig saldo: {format_currency(current_user["playing_balance"])}
             if trigger == "insufficient_starting_balance":
                 if current_user["playing_balance"] < 0:
                     current_user["playing_balance"] = round(current_user["playing_balance"] + fixed_costs, 2)
-                    print("De vaste kosten zijn teruggestort.")
-                    blank_lines(2)
+                    print_message("De vaste kosten zijn teruggestort.", "green")
 
                     return "end_program"
 
-                print("Uw budget is voldoende voor toegang tot het casino.")
-                print(SEPARATOR)
+                print_message("Uw budget is voldoende voor toegang tot het casino.", "green")
                 print()
-                input("Druk op Enter om verder te gaan naar de lobby.")
-                blank_lines(2)
+                get_input("Druk op Enter om verder te gaan naar de lobby.")
 
                 return "continue"
 

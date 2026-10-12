@@ -22,6 +22,7 @@ from utils.utils import (
     print_message,
     format_currency,
     get_input,
+    get_password,
 )
 
 
@@ -276,8 +277,8 @@ def login(current_user):
     while True:
         clear_terminal()
 
-        page_name = "Inloggen"
         profile = {}
+        page_name = "Inloggen"
 
         console.print(
             Padding(
@@ -299,7 +300,7 @@ def login(current_user):
             print_message(INVALID_INPUT, "red")
 
         while True:
-            password = console.input(f"{' ' * 5}[bright_white]Wachtwoord: [/]", password=True)
+            password = get_password("Wachtwoord: ")
 
             if password:
                 break
@@ -339,6 +340,7 @@ def login(current_user):
                 save_profiles(current_user)
                 print_message("U bent succesvol van profiel gewisseld.", "green")
 
+            print()
             get_input(CONTINUE_PROMPT)
             break
 
@@ -422,10 +424,10 @@ def create_profile() -> dict | None:
         print_message(INVALID_INPUT, "red")
 
     while True:
-        password = console.input(f"{' ' * 5}[bright_white]Kies een wachtwoord: [/]", password=True)
+        password = get_password("Kies een wachtwoord: ")
 
         if password:
-            confirm_password = console.input(f"{' ' * 5}[bright_white]Bevestig het wachtwoord: [/]", password=True)
+            confirm_password = get_password("Bevestig het wachtwoord: ")
 
             if password == confirm_password:
                 break
@@ -554,30 +556,59 @@ def delete_profile(current_user):
     while True:
         clear_terminal()
 
-        print(f"""
-{CASINO_NAME} - Profiel verwijderen
-{SEPARATOR}
-1. Profieloverzicht
-2. Profiel verwijderen
-0. Terug
-{SEPARATOR}""")
+        page_name = "Profiel verwijderen"
+
+        console.print(
+            Padding(
+                Panel(
+                    "1. Profieloverzicht\n"
+                    "2. Profiel verwijderen\n\n"
+                    "0. Terug",
+                    title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
+                    border_style="bright_yellow",
+                    padding=(1, 2),
+                ),
+                (1, 5))
+        )
 
         menu_choice = get_menu_choice(range(0, 3))
 
         if menu_choice == 1:
             clear_terminal()
 
-            print(f"""
-{CASINO_NAME} - Profieloverzicht
-{SEPARATOR}""")
+            page_name = "Profieloverzicht"
+
+            console.print(
+                Padding(
+                    Panel(
+                        "Een overzicht van beschikbare profielen.",
+                        title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
+                        border_style="bright_yellow",
+                        padding=(1, 2),
+                    ),
+                    (1, 5))
+            )
+
+            available_profiles = []
 
             for profile in sorted(profiles.keys()):
                 if profile == current_user["username"]:
                     continue
 
-                print(profile)
+                available_profiles.append(profile)
 
-            print(SEPARATOR)
+            available_profiles = "\n".join(available_profiles)
+
+            console.print(
+                Padding(
+                    Panel(
+                        f"{available_profiles}",
+                        border_style="bright_yellow",
+                        padding=(1, 2),
+                    ),
+                    (0, 5))
+            )
+
             print()
             get_input(CONTINUE_PROMPT)
 
@@ -592,8 +623,7 @@ def delete_profile(current_user):
             profile = {}
 
             while True:
-                print()
-                username = input("Welk profiel wilt u verwijderen? ").lower()
+                username = get_input("Welk profiel wilt u verwijderen? ").lower()
 
                 if username not in profiles:
                     print_message("Onbekende gebruikersnaam.", "red")
@@ -607,7 +637,7 @@ def delete_profile(current_user):
                 break
 
             while True:
-                password = getpass("Wachtwoord van profiel: ")
+                password = get_password("Wachtwoord van profiel: ")
 
                 if password != profile["password"]:
                     print_message("Ongeldig wachtwoord.", "red")
@@ -617,7 +647,7 @@ def delete_profile(current_user):
 
             while True:
                 print()
-                confirmation_choice = input("Weet u zeker dat u dit profiel wilt verwijderen? (Ja/Nee) ").lower()
+                confirmation_choice = get_input("Weet u zeker dat u dit profiel wilt verwijderen? (Ja/Nee) ").lower()
 
                 if confirmation_choice not in ("ja", "nee"):
                     print_message(INVALID_INPUT, "red")
@@ -645,42 +675,64 @@ def reset_password(current_user):
     Args:
         current_user (dict): The profile of the current user.
     """
-    print(f"""
-{CASINO_NAME} - Wachtwoord wijzigen
-{SEPARATOR}
-""")
+    clear_terminal()
+
+    page_name = "Wachtwoord wijzigen"
+
+    console.print(
+        Padding(
+            Panel(
+                "Wijzig hier uw wachtwoord.",
+                title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
+                border_style="bright_yellow",
+                padding=(1, 2),
+            ),
+            (1, 5))
+    )
 
     while True:
-        password = getpass("Huidige wachtwoord: ")
+        password = get_password("Huidige wachtwoord: ")
 
         if password != current_user["password"]:
+            print()
             print_message("Ongeldig wachtwoord.", "red")
+            print()
             continue
 
         break
 
     while True:
-        new_password = getpass("Nieuw wachtwoord: ")
+        new_password = get_password("Nieuwe wachtwoord: ")
 
         if not new_password:
+            print()
             print_message("Wachtwoord mag niet leeg zijn.", "red")
+            print()
             continue
 
         if password == new_password:
+            print()
             print_message("Nieuw wachtwoord mag niet gelijk zijn aan huidige wachtwoord.", "red")
+            print()
             continue
 
         break
 
     while True:
-        confirm_new_password = getpass("Bevestig nieuw wachtwoord: ")
+        confirm_new_password = get_password("Bevestig nieuw wachtwoord: ")
 
         if confirm_new_password != new_password:
+            print()
             print_message("Wachtwoorden komen niet overeen.", "red")
+            print()
             continue
 
         current_user["password"] = new_password
+        save_profiles(current_user)
+
+        print()
         print_message("Wachtwoord succesvol gewijzigd.", "green")
+        print()
         break
 
     get_input(CONTINUE_PROMPT)
@@ -699,6 +751,19 @@ def show_profile(current_user):
     """
     clear_terminal()
 
+    page_name = "Profiel"
+
+    console.print(
+        Padding(
+            Panel(
+                "Bekijk hier uw profiel.",
+                title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
+                border_style="bright_yellow",
+                padding=(1, 2),
+            ),
+            (1, 5))
+    )
+
     played_games = ""
 
     for game in sorted(current_user["played_games"].keys()):
@@ -706,20 +771,23 @@ def show_profile(current_user):
 
     played_games = played_games[:-2]
 
+    console.print(
+        Padding(
+            Panel(
+                f"Voornaam:                 {current_user["first_name"]}\n"
+                f"Achternaam:               {current_user["full_surname"]}\n"
+                f"Geslacht:                 {current_user["gender"].capitalize()}\n"
+                f"Geboortedatum:            {current_user["birth_date"]}\n"
+                f"Leeftijd:                 {current_user["age"]}\n"
+                f"Saldo:                    {format_currency(current_user["playing_balance"])}\n"
+                f"Gespeelde spellen:        {played_games}",
+                border_style="bright_yellow",
+                padding=(1, 2),
+            ),
+            (0, 5))
+    )
 
-    print(f"""
-{CASINO_NAME} - Profiel
-{SEPARATOR}
-Voornaam:           {current_user["first_name"]}
-Achternaam:         {current_user["full_surname"]}
-Geslacht:           {current_user["gender"].capitalize()}
-Geboortedatum:      {current_user["birth_date"]}
-Leeftijd:           {current_user["age"]}
-Saldo:              {format_currency(current_user["playing_balance"])}
-Gespeelde spellen:  {played_games}
-{SEPARATOR}
-""")
-
+    print()
     get_input(CONTINUE_PROMPT)
 
 
@@ -732,25 +800,49 @@ def show_game_statistics(current_user):
     """
     clear_terminal()
 
-    print(f"""
-{CASINO_NAME} - Spelstatistieken
-{SEPARATOR}""")
+    page_name = "Spelstatistieken"
+
+    console.print(
+        Padding(
+            Panel(
+                "Bekijk hier uw spelstatistieken.",
+                title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
+                border_style="bright_yellow",
+                padding=(1, 2),
+            ),
+            (1, 5))
+    )
+
+    played_games = []
 
     if not current_user["played_games"]:
-        print("U heeft nog geen spellen gespeeld.")
+        played_games.append("U heeft nog geen spellen gespeeld.")
 
     else:
         for game in sorted(current_user["played_games"].keys()):
-            print(f"""{str(game).capitalize()}
-    Aantal keer gespeeld:       {current_user["played_games"][game]["games_played"]}
-    Aantal rondes gespeeld:     {current_user["played_games"][game]["rounds_played"]}
-    Gewonnen rondes:            {current_user["played_games"][game]["results"]["won"]}""")
+            played_games.append(f"{str(game).capitalize()}")
+            played_games.append(f"    Aantal keer gespeeld:       {current_user["played_games"][game]["games_played"]}")
+            played_games.append(f"    Aantal rondes gespeeld:     {current_user["played_games"][game]["rounds_played"]}")
+            played_games.append(f"    Gewonnen rondes:            {current_user["played_games"][game]["results"]["won"]}")
 
             if game == "blackjack":
-                print(f"    Gelijkspel:                 {current_user["played_games"][game]["results"]["draw"]}")
+                played_games.append(f"    Gelijkspel:                 {current_user["played_games"][game]["results"]["draw"]}")
 
-            print(f"""    Verloren rondes:            {current_user["played_games"][game]["results"]["lost"]}
-{SEPARATOR}""")
+            played_games.append(f"    Verloren rondes:            {current_user["played_games"][game]["results"]["lost"]}")
+            played_games.append("")
+
+    del played_games[-1]
+    played_games = "\n".join(played_games)
+
+    console.print(
+        Padding(
+            Panel(
+                f"{played_games}",
+                border_style="bright_yellow",
+                padding=(1, 2),
+            ),
+            (0, 5))
+    )
 
     print()
     get_input(CONTINUE_PROMPT)
@@ -766,10 +858,20 @@ def show_all_profiles(current_user):
     clear_terminal()
     save_profiles(current_user)
 
-    print(f"""
-{CASINO_NAME} - Overzicht profielen
-{SEPARATOR}
- """)
+    page_name = "Overzicht profielen"
+
+    console.print(
+        Padding(
+            Panel(
+                "Bekijk hier een overzicht van alle profielen.",
+                title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
+                border_style="bright_yellow",
+                padding=(1, 2),
+            ),
+            (1, 5))
+    )
+
+    available_profiles = []
 
     for username in sorted(profiles.keys()):
         name = profiles[username]["first_name"]
@@ -779,10 +881,23 @@ def show_all_profiles(current_user):
 
         name += f" {profiles[username]["surname"]}"
 
-        print(f"""{username}
-    Naam:       {name}
-    Saldo:      {format_currency(profiles[username]["playing_balance"])}
-{SEPARATOR}""")
+        available_profiles.append(username)
+        available_profiles.append(f"    Naam:       {name}")
+        available_profiles.append(f"    Saldo:      {format_currency(profiles[username]["playing_balance"])}")
+        available_profiles.append("")
+
+    del available_profiles[-1]
+    available_profiles = "\n".join(available_profiles)
+
+    console.print(
+        Padding(
+            Panel(
+                f"{available_profiles}",
+                border_style="bright_yellow",
+                padding=(1, 2),
+            ),
+            (0, 5))
+    )
 
     print()
     get_input(CONTINUE_PROMPT)
@@ -884,19 +999,25 @@ def show_profile_menu(current_user):
     while True:
         clear_terminal()
 
-        print(f"""
-{CASINO_NAME} - Profielbeheer
-{SEPARATOR}
-1. Mijn profiel
-2. Mijn spelstatistieken
-3. Wachtwoord wijzigen
-4. Nieuw profiel aanmaken
-5. Profiel verwijderen
-6. Van profiel wisselen
-7. Toon alle profielen
+        page_name = "Profielbeheer"
 
-0. Terug
-{SEPARATOR}""")
+        console.print(
+            Padding(
+                Panel(
+                    "1. Mijn profiel\n"
+                    "2. Mijn spelstatistieken\n"
+                    "3. Wachtwoord wijzigen\n"
+                    "4. Nieuw profiel aanmaken\n"
+                    "5. Profiel verwijderen\n"
+                    "6. Van profiel wisselen\n"
+                    "7. Toon alle profielen\n\n"
+                    "0. Terug",
+                    title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
+                    border_style="bright_yellow",
+                    padding=(1, 2),
+                ),
+                (1, 5))
+        )
 
         menu_choice = get_menu_choice(range(0, 8))
 

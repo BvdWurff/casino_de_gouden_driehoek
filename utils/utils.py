@@ -131,3 +131,7 @@ def get_input(message, color="bright_white"):
     return console.input(f"{' ' * 5}[{color}]{message}[/]")
 
 
+def get_password(message, color="bright_white"):
+    return console.input(f"{' ' * 5}[{color}]{message}[/]", password=True)
+
+

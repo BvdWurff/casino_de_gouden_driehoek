@@ -2,6 +2,13 @@
 # FUNCTION IMPORTS
 # ==============================
 
+from rich.console import Console
+from rich.padding import Padding
+from rich.panel import Panel
+from rich.live import Live
+from rich.spinner import Spinner
+from rich.console import Group
+
 from games import (
     roulette,
     slot_machine,
@@ -34,6 +41,8 @@ AVAILABLE_GAMES = {
     3: ("Blackjack", blackjack),
 }
 
+console = Console(width=100)
+
 
 # ==============================
 # PROGRAM FLOW
@@ -49,16 +58,31 @@ def choose_game(current_user):
     while True:
         clear_terminal()
 
-        print(f"""
-{CASINO_NAME} - Spellen
-{SEPARATOR}""")
+        page_name = "Spellen"
+
+        menu = []
 
         for game_number, (game_name, _) in AVAILABLE_GAMES.items():
-            print(f"{game_number}. {game_name}")
+            menu.append(f"{game_number}. {game_name}")
 
-        print(f"""
-0. Terug naar hoofdmenu
-{SEPARATOR}""")
+        menu.append("")
+        menu.append("0. Terug naar hoofdmenu")
+
+        menu = "\n".join(menu)
+
+        console.print(
+            Padding(
+                Panel(
+                    f"{menu}",
+                    title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
+                    border_style="bright_yellow",
+                    padding=(1, 2),
+                ),
+                (1, 5))
+        )
+
+
+
 
         menu_choice = get_menu_choice(range(0, len(AVAILABLE_GAMES) + 1))
         blank_lines(2)
