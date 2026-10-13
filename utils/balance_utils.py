@@ -4,20 +4,13 @@
 
 import time
 
-from rich.console import Console
-from rich.padding import Padding
-from rich.panel import Panel
-from rich.live import Live
-from rich.spinner import Spinner
-from rich.console import Group
-
 from utils.utils import (
-    blank_lines,
-    clear_terminal,
     format_currency,
     get_menu_choice,
     print_message,
     get_input,
+    display_page,
+    display_spinner,
 )
 
 
@@ -29,7 +22,6 @@ from utils.constants import (
     CASINO_NAME,
     CONTINUE_PROMPT,
     INVALID_INPUT,
-    SEPARATOR,
     ADMISSION_PRICE,
     SERVICE_FEE,
     MANDATORY_DRINK_PRICE,
@@ -38,17 +30,10 @@ from utils.constants import (
 
 
 # ==============================
-# CONFIGURATION
-# ==============================
-
-console = Console(width=100)
-
-
-# ==============================
 # BALANCE MANAGEMENT
 # ==============================
 
-def manage_balance(current_user, fixed_costs=0.0, trigger="") -> str:
+def manage_balance(current_user, fixed_costs=0.0, trigger=""):
     """
     Displays the balance menu and handles deposits and withdrawals.
 
@@ -61,25 +46,19 @@ def manage_balance(current_user, fixed_costs=0.0, trigger="") -> str:
         str: The action to perform.
     """
     while True:
-        clear_terminal()
+        page_content = f"""Uw huidige saldo bedraagt {format_currency(current_user["playing_balance"])}
+        
+1. Saldo storten
+2. Saldo opnemen
 
-        page_name = "Saldo-overzicht"
+0. Terug"""
 
-        console.print(
-            Padding(
-                Panel(
-                    "1. Saldo storten\n"
-                    "2. Saldo opnemen\n\n"
-                    "0. Terug",
-                    title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
-                    border_style="bright_yellow",
-                    padding=(1, 2),
-                ),
-                (1, 5))
-        )
+        display_page(location=CASINO_NAME,
+                     title="Saldo-overzicht",
+                     content=page_content
+                     )
 
         menu_choice = get_menu_choice(range(0, 3))
-        print()
 
         if menu_choice == 1:
             while True:
@@ -94,40 +73,28 @@ def manage_balance(current_user, fixed_costs=0.0, trigger="") -> str:
                     continue
 
                 if amount == 0:
-                    print_message("U keert terug naar het saldo-overzicht.")
-                    blank_lines(2)
+                    print()
+                    print_message("U keert terug naar het saldo-overzicht.", "green")
                     time.sleep(1)
                     break
 
                 current_user["playing_balance"] = round(current_user["playing_balance"] + amount, 2)
 
                 print()
-
-                with Live(
-                        Padding.indent(
-                            Spinner(
-                                "dots",
-                                text="[bright_yellow]Verwerken, even geduld...[/]",
-                                style="bright_yellow"
-                            ),
-                            5
-                        ),
-                        console=console,
-                        transient=True
-                ):
-                    time.sleep(2)
+                display_spinner("Verwerken")
 
                 print_message("Het bedrag is succesvol gestort.", "green")
                 print()
-                get_input("Druk op Enter om terug te keren naar het saldo-overzicht.")
+                get_input(CONTINUE_PROMPT)
                 break
 
         elif menu_choice == 2:
             if current_user["playing_balance"] <= 0:
                 print()
-                print_message("U heeft onvoldoende saldo voor deze opname.", "red")
+                print_message("U heeft onvoldoende saldo voor een opname.", "red")
                 print()
                 get_input(CONTINUE_PROMPT)
+                break
 
             else:
                 while True:
@@ -143,7 +110,7 @@ def manage_balance(current_user, fixed_costs=0.0, trigger="") -> str:
 
                     if amount == 0:
                         print()
-                        print_message("U keert terug naar het saldo-overzicht.")
+                        print_message("U keert terug naar het saldo-overzicht.", "green")
                         time.sleep(1)
                         break
 
@@ -151,30 +118,16 @@ def manage_balance(current_user, fixed_costs=0.0, trigger="") -> str:
                         print()
                         print_message("U heeft onvoldoende saldo voor deze opname.", "red")
                         print()
-                        get_input(CONTINUE_PROMPT)
                         continue
 
                     current_user["playing_balance"] = round(current_user["playing_balance"] - amount, 2)
 
                     print()
-
-                    with Live(
-                            Padding.indent(
-                                Spinner(
-                                    "dots",
-                                    text="[bright_yellow]Verwerken, even geduld...[/]",
-                                    style="bright_yellow"
-                                ),
-                                5
-                            ),
-                            console=console,
-                            transient=True
-                    ):
-                        time.sleep(2)
+                    display_spinner("Verwerken")
 
                     print_message("Het bedrag is succesvol opgenomen.", "green")
                     print()
-                    get_input("Druk op Enter om terug te keren naar het saldo-overzicht.")
+                    get_input(CONTINUE_PROMPT)
                     break
 
         elif menu_choice == 0:

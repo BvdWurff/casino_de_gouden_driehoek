@@ -35,13 +35,12 @@ from utils.constants import (
 
 NAME_GAME = "fruitmachine"
 
-GAME_INSTRUCTIONS = f"""Het doel van de fruitmachine is om zoveel mogelijk gelijke symbolen te draaien.
+GAME_INSTRUCTIONS = """Het doel van de fruitmachine is om zoveel mogelijk gelijke symbolen te draaien.
 Bepaal uw inzet en haal daarna de hendel over.
 De drie rollen draaien onafhankelijk van elkaar en komen ieder op één symbool tot stilstand.
-Hoe meer gelijke symbolen u draait, hoe hoger uw uitbetaling.
+Hoe meer gelijke symbolen u draait, hoe hoger uw uitbetaling."""
 
-Uitbetaling:
-{SEPARATOR}
+PAYOUT_STRUCTURE = """
 🍒 🍒       = 1,5x inzet
 🍒 🍒 🍒    = 3x inzet
 
@@ -49,8 +48,7 @@ Uitbetaling:
 🔔 🔔 🔔    = 5x inzet
 
 💎 💎       = 3x inzet
-💎 💎 💎    = 9x inzet - JACKPOT!"""
-
+💎 💎 💎    = 9x inzet - [bold]JACKPOT[/]!"""
 
 # ==============================
 # SLOT MACHINE GAME LOGIC
@@ -186,7 +184,7 @@ def play(current_user) -> str:
         str: The action to perform.
     """
     game = NAME_GAME
-    action, stake = prepare_game(current_user, game, GAME_INSTRUCTIONS)
+    action, stake = prepare_game(current_user, game, GAME_INSTRUCTIONS, PAYOUT_STRUCTURE)
 
     if action in ("choose_game", "main_menu"):
         return action

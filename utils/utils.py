@@ -4,9 +4,13 @@
 
 import os
 import subprocess
+import time
 
 from rich.console import Console
 from rich.padding import Padding
+from rich.panel import Panel
+from rich.live import Live
+from rich.spinner import Spinner
 
 # ==============================
 # CONSTANTS
@@ -15,7 +19,6 @@ from rich.padding import Padding
 from utils.constants import (
     CHOOSE_OPTION,
     INVALID_INPUT,
-    RESET,
 )
 
 # ==============================
@@ -78,7 +81,7 @@ def get_confirmation(action):
         bool: True when the action is confirmed, otherwise False.
     """
     while True:
-        confirmation_choice = console.input(f"{' ' * 5}[bright_white]Weet u zeker dat u wilt {action}? (Ja/Nee)[/] ").lower()
+        confirmation_choice = get_input(f"Weet u zeker dat u wilt {action}? (Ja/Nee) ").lower()
 
         if confirmation_choice not in ("ja", "nee"):
             print_message(INVALID_INPUT, "red")
@@ -99,7 +102,7 @@ def get_menu_choice(valid_choices):
     """
     while True:
         try:
-            menu_choice = int(console.input(f"{' ' * 5}[bright_white]{CHOOSE_OPTION}[/]"))
+            menu_choice = int(get_input(f"{CHOOSE_OPTION}"))
 
         except ValueError:
             print_message(INVALID_INPUT, "red")
@@ -127,11 +130,57 @@ def print_message(message, color=""):
         style=f"{color}",
     )
 
+
 def get_input(message, color="bright_white"):
     return console.input(f"{' ' * 5}[{color}]{message}[/]")
 
 
 def get_password(message, color="bright_white"):
     return console.input(f"{' ' * 5}[{color}]{message}[/]", password=True)
+
+
+def display_page(location, title, content):
+    clear_terminal()
+
+    console.print(
+        Padding(
+            Panel(
+                f"{content}",
+                title=f"[bold bright_yellow]{location}[/] [bold bright_white]- {title}[/]",
+                border_style="bright_yellow",
+                padding=(1, 2),
+            ),
+            (1, 5))
+    )
+
+def display_panel(content, border_style="bright_yellow", title_color="bright_white", title="", title_align="left" ):
+    console.print(
+        Padding(
+            Panel(
+                f"{content}",
+                border_style=border_style,
+                title=f"[bold {title_color}]{title}[/]",
+                title_align=title_align,
+                padding=(1, 2),
+            ),
+            (0, 5)
+        )
+    )
+    print()
+
+def display_spinner(text, style="dots"):
+    with Live(
+            Padding.indent(
+                Spinner(
+                    style,
+                    text=f"[bright_yellow]{text}, even geduld...[/]",
+                    style="bright_yellow"
+                ),
+                5
+            ),
+            console=console,
+            transient=True
+    ):
+        time.sleep(2)
 
 

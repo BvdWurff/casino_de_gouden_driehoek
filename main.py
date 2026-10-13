@@ -2,12 +2,6 @@
 # FUNCTION IMPORTS
 # ==============================
 
-from rich.console import Console
-from rich.panel import Panel
-from rich import print
-from rich.console import Group
-from rich.padding import Padding
-
 from game_selection import (
     choose_game,
 )
@@ -25,12 +19,12 @@ from profiles import (
 )
 from utils.utils import (
     blank_lines,
-    clear_terminal,
     format_currency,
     get_confirmation,
     get_menu_choice,
     print_message,
     get_input,
+    display_page,
 )
 
 # ==============================
@@ -42,12 +36,6 @@ from utils.constants import (
     CONTINUE_PROMPT,
     RED,
 )
-
-# ==============================
-# CONFIGURATION
-# ==============================
-
-console = Console(width=100)
 
 
 # ==============================
@@ -62,35 +50,19 @@ def show_parting_message(current_user=None, trigger=""):
         current_user (dict or None): The profile of the current user.
         trigger (str): Location the function is triggered from.
     """
-    clear_terminal()
-
-    page_name = "Vertrek"
-
     if trigger == "start_page":
-        console.print(
-            Padding(
-                Panel(
-                    "U verlaat het casino."
-                    f"Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!",
-                    title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
-                    border_style="bright_yellow",
-                    padding=(1, 2),
-                ),
-                (1, 5))
-        )
+        content = f"""U verlaat het casino.
+Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!"""
 
-    elif current_user is not None:
-        console.print(
-            Padding(
-                Panel(
-                    f"U verlaat het casino met een eindsaldo van {format_currency(current_user["playing_balance"])}.\n\n"
-                    f"Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!",
-                    title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
-                    border_style="bright_yellow",
-                    padding=(1, 2),
-                ),
-                (1, 5))
-        )
+    else:
+        content = f""""U verlaat het casino met een eindsaldo van {format_currency(current_user["playing_balance"])}.
+Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!"""
+
+
+    display_page(location=CASINO_NAME,
+                 title="Vertrek",
+                 content=content
+                 )
 
 
 # ==============================
@@ -102,27 +74,18 @@ def show_welcome_page():
     Displays the casino welcome message
 
     """
-    clear_terminal()
+    content = f"""Welkom bij {CASINO_NAME}!
 
-    page_name = "Startpagina"
+Voor de beste weergave wordt aangeraden het programma in een [i]terminal[/] uit te voeren
+of in PyCharm [i]Emulate terminal in output console[/] in te schakelen."""
 
-    console.print(
-        Padding(
-            Group(
-                Panel(
-                    f"Welkom bij {CASINO_NAME}!\n\n"
-                    "Voor de beste weergave wordt aangeraden het programma in een [i]terminal[/] uit te voeren\n"
-                    "of in PyCharm [i]Emulate terminal in output console[/] in te schakelen.",
-                    title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
-                    border_style="bright_yellow",
-                    padding=(1, 2),
-                ),
-                f"\n[bright_white]{CONTINUE_PROMPT}[/]",
-            ),
-        (1,5))
-    )
+    display_page(location=CASINO_NAME,
+                 title="Startpagina",
+                 content=content
+                 )
 
-    input()
+    get_input(CONTINUE_PROMPT)
+
 
 def show_login_page():
     """
@@ -132,24 +95,18 @@ def show_login_page():
         tuple: The current user and starting balance.
     """
     while True:
-        clear_terminal()
-
-        page_name = "Inlogpagina"
         starting_balance = 0.0
         current_user = {}
 
-        console.print(
-            Padding(
-                Panel(
-                    "1. Inloggen\n"
-                    "2. Profiel aanmaken\n\n"
-                    "0. Stoppen",
-                    title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
-                    border_style="bright_yellow",
-                    padding=(1, 2),
-                ),
-            (1,5))
-        )
+        content = f"""1. Inloggen
+2. Profiel aanmaken
+
+0. Stoppen"""
+
+        display_page(location=CASINO_NAME,
+                     title="Inlogpagina",
+                     content=content
+                     )
 
         menu_choice = get_menu_choice(range(0, 3))
 
@@ -174,7 +131,6 @@ def show_login_page():
             break
 
         elif menu_choice == 0:
-            print()
             confirmation = get_confirmation("stoppen")
 
             if confirmation:
@@ -195,23 +151,16 @@ def main_menu(current_user):
         current_user (dict): The profile of the current user.
     """
     while True:
-        clear_terminal()
+        content = f"""1. Spellen
+2. Saldo
+3. Profiel
 
-        page_name = "Lobby"
+0. Casino verlaten"""
 
-        console.print(
-            Padding(
-                Panel(
-                    "1. Spellen\n"
-                    "2. Saldo\n"
-                    "3. Profiel\n\n"
-                    "0. Casino verlaten",
-                    title=f"[bold bright_yellow]{CASINO_NAME}[/] [bold bright_white]- {page_name}[/]",
-                    border_style="bright_yellow",
-                    padding=(1, 2),
-                ),
-                (1, 5))
-        )
+        display_page(location=CASINO_NAME,
+                     title="Lobby",
+                     content=content
+                     )
 
         menu_choice = get_menu_choice(range(0, 4))
 

@@ -8,7 +8,7 @@
         "gender": "man",
         "playing_balance": 2350.0,
         "source": "create_account",
-        "visits": 19,
+        "visits": 22,
         "played_games": {
             "roulettetafel": {
                 "games_played": 1,
@@ -126,6 +126,30 @@
         "first_name": "Henkie",
         "surname_prefix": "",
         "surname": "Iets",
+        "birth_date": "26-08-1985",
+        "gender": "man",
+        "playing_balance": 100.0,
+        "source": "user",
+        "visits": 0,
+        "played_games": {}
+    },
+    "bart1": {
+        "password": "123",
+        "first_name": "Bart",
+        "surname_prefix": "van der",
+        "surname": "Wurff",
+        "birth_date": "26-08-1985",
+        "gender": "man",
+        "playing_balance": 100.0,
+        "source": "user",
+        "visits": 0,
+        "played_games": {}
+    },
+    "bart2": {
+        "password": "123",
+        "first_name": "Bart",
+        "surname_prefix": "van der",
+        "surname": "Wurff",
         "birth_date": "26-08-1985",
         "gender": "man",
         "playing_balance": 100.0,

@@ -7,11 +7,12 @@ from utils.balance_utils import (
 )
 from utils.utils import (
     blank_lines,
-    clear_terminal,
     format_currency,
     get_menu_choice,
     print_message,
     get_input,
+    display_page,
+    display_panel,
 )
 
 
@@ -21,12 +22,7 @@ from utils.utils import (
 
 from utils.constants import (
     CONTINUE_PROMPT,
-    GREEN,
     INVALID_INPUT,
-    ORANGE,
-    RED,
-    RESET,
-    SEPARATOR,
 )
 
 
@@ -34,24 +30,23 @@ from utils.constants import (
 # GAME INFORMATION
 # ==============================
 
-def show_game_instructions(game, game_instructions):
+def show_game_instructions(game, game_instructions, payout_structure=""):
     """
     Displays the instructions for the selected game.
 
     Args:
         game (str): The current game.
         game_instructions (str): The instructions for the selected game.
+        payout_structure (str): The payout structure of the selected game.
     """
-    clear_terminal()
+    display_page(location=game.capitalize(),
+                 title="Speluitleg",
+                 content=game_instructions
+                 )
 
-    print(f"""
-{game.capitalize()} - Speluitleg
-{SEPARATOR}
-Welkom bij de {game}.
+    if payout_structure:
 
-{game_instructions}
-{SEPARATOR}
-""")
+        display_panel(payout_structure, title="Uitbetaling")
 
     get_input(CONTINUE_PROMPT)
 
@@ -70,19 +65,18 @@ def get_game_action(game) -> str:
     Returns:
         str: The selected action.
     """
-    clear_terminal()
-
-    print(f"""
-{game.capitalize()} - Spelopties
-{SEPARATOR}
-U heeft gekozen om het spel te stoppen.
-Wat wilt u doen?
+    content = """U heeft gekozen om het spel te stoppen. Wat wilt u doen?
 
 1. Verder spelen
 2. Inzet aanpassen
 3. Ander spel kiezen
-0. Terug naar de lobby
-{SEPARATOR}""")
+
+0. Terug naar de lobby"""
+
+    display_page(location=game.capitalize(),
+                 title="Spelopties",
+                 content=content
+                 )
 
     menu_choice = get_menu_choice(range(0, 4))
 
@@ -120,16 +114,16 @@ def game_menu(current_user, game, game_instructions) -> str:
     action = "continue"
 
     while True:
-        clear_terminal()
-
-        print(f"""
-{game.capitalize()} - Spelmenu
-{SEPARATOR}
-1. Spel starten
+        content = """1. Spel starten
 2. Spelinstructies
 3. Saldo-overzicht
-0. Stoppen
-{SEPARATOR}""")
+
+0. Stoppen """
+
+        display_page(location=game.capitalize(),
+                     title="Spelmenu",
+                     content=content
+                     )
 
         menu_choice = get_menu_choice(range(0, 4))
 
@@ -167,18 +161,20 @@ def get_round_action(current_user, stake, game) -> str:
         str: The selected action.
     """
     while True:
-        clear_terminal()
+        page_content = f"""Huidig saldo:    {format_currency(current_user["playing_balance"])}
+Huidige inzet:   {format_currency(stake)}"""
 
-        print(f"""
-{game.capitalize()} - Ronde-overzicht
-{SEPARATOR}
-Huidig saldo:    {format_currency(current_user["playing_balance"])}
-Huidige inzet:   {format_currency(stake)}
+        display_page(location=game.capitalize(),
+                     title="Ronde-overzicht",
+                     content=page_content
+                     )
 
-1. Nieuwe ronde
+        panel_content = """1. Nieuwe ronde
 2. Inzet wijzigen
-0. Stoppen
-{SEPARATOR}""")
+
+0. Stoppen"""
+
+        display_panel(panel_content, title="Opties")
 
         menu_choice = get_menu_choice(range(0, 3))
 
@@ -216,12 +212,14 @@ def handle_insufficient_balance(current_user, game) -> str:
         str: The selected action.
     """
     while True:
-        print(f"""Uw saldo is ontoereikend voor deze inzet.
-{SEPARATOR}
+        panel_content = """Uw saldo is ontoereikend voor deze inzet.
+
 1. Inzet wijzigen
 2. Saldo wijzigen
-0. Terug
-{SEPARATOR}""")
+
+0. Terug"""
+
+        display_panel(panel_content)
 
         menu_choice = get_menu_choice(range(0, 3))
 
@@ -262,28 +260,26 @@ def get_stake(current_user, stake, game, show_header=True) -> tuple[str, int | f
         action = "continue"
 
         if show_header:
-            clear_terminal()
-
-            print(f"""
-{game.capitalize()} - Inzet bepalen
-{SEPARATOR}
-Uw huidige saldo bedraagt {format_currency(current_user["playing_balance"])}.""")
+            content = f"""Uw huidige saldo bedraagt {format_currency(current_user["playing_balance"])}."""
 
             if stake > 0:
-                print(f"Uw huidige inzet bedraagt {format_currency(stake)}.")
+                content += f"\nUw huidige inzet bedraagt {format_currency(stake)}."
 
-            print(SEPARATOR)
+            display_page(location=game.capitalize(),
+                         title="Inzet bepalen",
+                         content=content
+                         )
 
         while True:
             try:
-                stake = round(float(input("Hoeveel wilt u inzetten? € ")), 2)
+                stake = round(float(get_input("Hoeveel wilt u inzetten? € ")), 2)
             except ValueError:
                 print_message(INVALID_INPUT, "red")
                 continue
 
             if stake <= 0:
                 print()
-                print("De inzet moet hoger zijn dan €0.")
+                print_message("De inzet moet hoger zijn dan €0.", "red")
                 print()
                 continue
 
@@ -301,8 +297,9 @@ Uw huidige saldo bedraagt {format_currency(current_user["playing_balance"])}."""
                 break
 
             print()
-            input(f"Uw inzet is geaccepteerd. {CONTINUE_PROMPT}")
-            blank_lines(2)
+            print_message(f"Uw inzet is geaccepteerd.", "green")
+            print()
+            get_input(CONTINUE_PROMPT)
 
             return "continue", stake
 
@@ -322,34 +319,23 @@ def show_game_results(current_user, game_result, game, payout, stake):
         payout (int or float): The amount paid out to the player.
         stake (int or float): The amount that was wagered.
     """
-    clear_terminal()
-
-    print(f"""
-{game.capitalize()} - Speluitslag
-{SEPARATOR}""")
+    content = ""
 
     if game_result == "won":
-        print(f"""
-Gefeliciteerd, u heeft {GREEN}gewonnen{RESET}!
-Uw uitbetaling bedraagt {format_currency(payout)}.
-
-{SEPARATOR}
-""")
+        content += f"""Gefeliciteerd, u heeft [bold green]gewonnen[/]!
+Uw uitbetaling bedraagt {format_currency(payout)}"""
 
     elif game_result == "draw":
-        print(f"""
-Het is {ORANGE}gelijkspel{RESET}.
-U krijgt uw inzet van {format_currency(stake)} terug.
-
-{SEPARATOR}
-""")
+        content += f"""Het is [bold orange]gelijkspel[/].
+U krijgt uw inzet van {format_currency(stake)} terug."""
 
     else:
-        print(f"""
-Helaas, u heeft {RED}verloren{RESET}.
+        content += f"""Helaas, u heeft [bold red]verloren[/]."""
 
-{SEPARATOR}
-""")
+    display_page(location=game.capitalize(),
+                 title="Speluitslag",
+                 content=content
+                 )
 
     get_input(CONTINUE_PROMPT)
 
@@ -360,7 +346,7 @@ Helaas, u heeft {RED}verloren{RESET}.
 # GAME FLOW HELPERS
 # ==============================
 
-def prepare_game(current_user, game, game_instructions) -> tuple[str, int | float]:
+def prepare_game(current_user, game, game_instructions, payout_structure="") -> tuple[str, int | float]:
     """
     Prepares a game by showing its instructions, handling its menu and setting a stake.
 
@@ -368,13 +354,14 @@ def prepare_game(current_user, game, game_instructions) -> tuple[str, int | floa
         current_user (dict): The profile of the current user.
         game (str): The current game.
         game_instructions (str): The instructions for the selected game.
+        payout_structure (str): The payout structure for the selected game.
 
     Returns:
         tuple: The action and stake.
     """
     stake = 0.0
 
-    show_game_instructions(game, game_instructions)
+    show_game_instructions(game, game_instructions, payout_structure)
 
     while True:
         action = game_menu(current_user, game, game_instructions)

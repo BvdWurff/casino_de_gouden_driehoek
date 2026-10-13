@@ -5,6 +5,8 @@
 import random
 import time
 
+from rich.console import Console
+
 from utils.game_utils import (
     get_game_action,
     get_stake,
@@ -21,6 +23,8 @@ from utils.utils import (
     get_menu_choice,
     print_message,
     get_input,
+    display_page,
+    display_panel,
 )
 
 
@@ -46,11 +50,13 @@ from utils.constants import (
 
 NAME_GAME = "roulettetafel"
 MAX_RECENT_RESULTS = 10
+console = Console(width=100)
 
 GAME_INSTRUCTIONS = """Het doel van roulette is om te voorspellen waar het balletje zal landen.
 Kies waarop u wilt inzetten en bepaal vervolgens uw inzet.
 Het balletje kan op een vakje met een van de getallen van 0 tot en met 36 landen.
 Ieder vakje heeft een kleur: rood, zwart of groen.
+
 In het keuze-overzicht ziet u per optie hoeveel winst u kunt behalen."""
 
 
@@ -74,7 +80,7 @@ def select_number():
     """
     while True:
         try:
-            selected_number = int(input("Op welk nummer wilt u inzetten? (0 t/m 36) "))
+            selected_number = int(get_input("Op welk nummer wilt u inzetten? (0 t/m 36) "))
         except ValueError:
             print_message(INVALID_INPUT, "red")
             continue
@@ -97,33 +103,33 @@ def get_bet_choice(recent_results, game):
         tuple: The action, selected bet and optional roulette number.
     """
     while True:
-        clear_terminal()
-
-        print(f"""
-{game.capitalize()} - Inzetmogelijkheden
-{SEPARATOR}""")
+        content = ""
 
         if recent_results:
-            print(f"""Laatste resultaten:
+            content += f"""Laatste resultaten:
 {format_recent_results(recent_results)}
-""")
 
-        print(f"""1. Rood   - winst: 1x inzet
+"""
+
+        content += """1. Rood   - winst: 1x inzet
 2. Zwart  - winst: 1x inzet
 3. Groen  - winst: 35x inzet
 4. Even   - winst: 1x inzet
 5. Oneven - winst: 1x inzet
 6. Nummer - winst: 35x inzet
 
-0. Stoppen
-{SEPARATOR}""")
+0. Stoppen"""
+
+        display_page(location=game.capitalize(),
+                     title="Inzetmogelijkheden",
+                     content=content
+                     )
 
         bet_choice = get_menu_choice(range(0, 7))
         action = "continue"
         selected_number = None
 
         if bet_choice == 6:
-            print()
             selected_number = select_number()
 
         elif bet_choice == 0:
@@ -132,8 +138,6 @@ def get_bet_choice(recent_results, game):
             # A valid bet still needs to be selected when the game is resumed.
             if action == "continue":
                 continue
-
-        blank_lines(2)
 
         return action, bet_choice, selected_number
 
@@ -197,39 +201,38 @@ def confirm_bet(
         tuple: The action, stake, bet choice and selected roulette number.
     """
     while True:
-        clear_terminal()
         bet_choice_text = get_bet_choice_text(bet_choice)
 
-        print(f"""
-{game.capitalize()} - Spelopties
-{SEPARATOR}
-Huidige inzet:
-Inzet:      {format_currency(stake)}
-Keuze:      {bet_choice_text}""")
+        page_content = f"""Huidige inzet:
+Inzet:          {format_currency(stake)}
+Keuze:          {bet_choice_text}"""
 
         if bet_choice == 6:
-            print(f"Nummer:     {selected_number}")
+            page_content += f"\nNummer:         {selected_number}"
 
-        print(f"""
-Huidig saldo:
-Saldo:      {format_currency(current_user["playing_balance"])}""")
+        page_content += f"""\n
+Huidig saldo:   
+{format_currency(current_user["playing_balance"])}"""
 
         if recent_results:
-            print(f"""
+            page_content += f"""
+
 Laatste resultaten:
-{format_recent_results(recent_results)}""")
+{format_recent_results(recent_results)}"""
 
-        print(f"""{SEPARATOR}
+        display_page(location=game.capitalize(),
+                     title="Spelopties",
+                     content=page_content
+                     )
 
-Wat wilt u doen?
-{SEPARATOR}
-1. Spelen met huidige inzet
+        panel_content = """1. Spelen met huidige inzet
 2. Keuze aanpassen
 3. Inzet aanpassen
 4. Keuze en inzet aanpassen
 
-0. Stoppen
-{SEPARATOR}""")
+0. Stoppen"""
+
+        display_panel(panel_content, title="Opties")
 
         menu_choice = get_menu_choice(range(0, 5))
 
@@ -440,15 +443,15 @@ def get_font_color(color):
     Returns:
         str: The corresponding ANSI console color.
     """
-    font_color = RESET
+    font_color = ""
 
     match color:
         case "groen":
-            font_color = GREEN
+            font_color = "green"
         case "rood":
-            font_color = RED
+            font_color = "red"
         case "zwart":
-            font_color = BLACK
+            font_color = "black"
 
     return font_color
 
@@ -467,7 +470,7 @@ def format_recent_results(recent_results):
 
     for number, color in recent_results:
         font_color = get_font_color(color)
-        formatted_results += f"{font_color}{WHITE_BACKGROUND} {number} {RESET}"
+        formatted_results += f"[{font_color} on white] {number} [/]"
 
     return formatted_results
 
@@ -481,32 +484,25 @@ def show_spin_result(spin_result, color, game):
         color (str): The color of the roulette result.
         game (str): The current game.
     """
-    clear_terminal()
     font_color = get_font_color(color)
+    content = "De croupier rolt het balletje. Veel geluk!"
 
-    print(f"""
-{game.capitalize()} - Speelronde
-{SEPARATOR}
-""")
+    display_page(location=game.capitalize(),
+                 title="Speelronde",
+                 content=content
+                 )
 
-    print("De croupier rolt het balletje. Veel geluk!")
     time.sleep(1)
-    print("...")
+    print_message("[default]...[/]")
     time.sleep(1)
-    print("Rien ne va plus!")
+    print_message("Rien ne va plus!")
     time.sleep(1)
-    print("...")
+    print_message("[default]...[/]")
     time.sleep(1)
 
-    print(
-        f"Het balletje is geland op "
-        f"{font_color}{WHITE_BACKGROUND}"
-        f"{spin_result} {color.capitalize()}"
-        f"{RESET}."
+    print_message(
+        f"Het balletje is geland op [{font_color} on white]{spin_result} {color.capitalize()}[/]."
     )
-
-    print()
-    print(SEPARATOR)
     print()
     get_input(CONTINUE_PROMPT)
 
