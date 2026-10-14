@@ -5,6 +5,9 @@
 import random
 import time
 
+from rich.console import Console
+from rich.padding import Padding
+
 from utils.game_utils import (
     get_round_action,
     handle_round_setup,
@@ -13,9 +16,11 @@ from utils.game_utils import (
     update_game_stats,
 )
 from utils.utils import (
-    clear_terminal,
     get_menu_choice,
     get_input,
+    display_page,
+    print_message,
+    display_menu_table,
 )
 
 
@@ -24,17 +29,12 @@ from utils.utils import (
 # ==============================
 
 from utils.constants import (
-    BLACK,
     BLACKJACK_MULTIPLIER,
     BLACKJACK_PUSH_MULTIPLIER,
     BLACKJACK_WIN_MULTIPLIER,
     CONTINUE_PROMPT,
     RANKS,
-    RED,
-    RESET,
-    SEPARATOR,
     SUITS,
-    WHITE_BACKGROUND,
 )
 
 
@@ -42,6 +42,7 @@ from utils.constants import (
 # CONFIGURATION
 # ==============================
 
+console = Console(width=80)
 NAME_GAME = "blackjack"
 DECKS_IN_SHOE = 6
 
@@ -59,11 +60,9 @@ Komt u boven de 21 punten, dan verliest u direct.
 Na uw beurt speelt de dealer verder.
 Heeft u meer punten dan de dealer zonder boven de 21 uit te komen, dan wint u.
 Heeft u 21 punten met uw eerste twee kaarten, dan heeft u blackjack.
-Heeft u evenveel punten als de dealer, dan is het gelijkspel en krijgt u uw inzet terug.
+Heeft u evenveel punten als de dealer, dan is het gelijkspel en krijgt u uw inzet terug."""
 
-Uitbetaling:
-{SEPARATOR}
-Blackjack                = 2,5x inzet
+PAYOUT_STRUCTURE = """Blackjack                = 2,5x inzet
 Gewonnen                 = 2x inzet
 Gelijkspel               = 1x inzet"""
 
@@ -309,14 +308,11 @@ def format_hand(hand):
         value = card[1:]
 
         if suit in ("♥", "♦"):
-            suit_color = RED
+            suit_color = 'red'
         else:
-            suit_color = BLACK
+            suit_color = 'black'
 
-        formatted_hand += (
-            f"{WHITE_BACKGROUND}{suit_color}{suit}{RESET}"
-            f"{WHITE_BACKGROUND}{value}{RESET} | "
-        )
+        formatted_hand += f"[{suit_color} on white]{suit}{value}[/] | "
 
     formatted_hand = formatted_hand[:-3]
 
@@ -337,8 +333,6 @@ def prepare_play_hand(player_hand, dealer_hand, game, actor):
         tuple: Dealer hand values, dealer value text, dealer status,
         player hand values, player value text and player status.
     """
-    clear_terminal()
-
     dealer_hand_values, dealer_hand_values_text, dealer_status = calculate_hand_values(dealer_hand, "dealer")
     player_hand_values, player_hand_values_text, player_status = calculate_hand_values(player_hand, "player")
 
@@ -346,29 +340,28 @@ def prepare_play_hand(player_hand, dealer_hand, game, actor):
         player_hand_values = player_hand_values[-2:]
         player_hand_values_text = "handwaarde is:"
 
-    print(f"""
-{game.capitalize()} - Spelopties
-{SEPARATOR}
-Huidige handen:""")
+    content = "Huidige handen:\n"
+
 
     if actor == "dealer":
-        print(f"""
+        content += f"""
 Dealer:      {format_hand(dealer_hand)}
 Speler:      {format_hand(player_hand)}
 
 Dealer {dealer_hand_values_text} {dealer_hand_values}
-Speler {player_hand_values_text} {player_hand_values}
-{SEPARATOR}
-""")
+Speler {player_hand_values_text} {player_hand_values}"""
 
     else:
-        print(f"""
+        content += f"""
 Dealer:      {format_hand([dealer_hand[0]])} | ??
 Speler:      {format_hand(player_hand)}
 
-Speler {player_hand_values_text} {player_hand_values}
-{SEPARATOR}
-""")
+Speler {player_hand_values_text} {player_hand_values}"""
+
+    display_page(location=game.capitalize(),
+                 title="Spelopties",
+                 content=content
+                 )
 
     return (
         dealer_hand_values,
@@ -389,25 +382,22 @@ def show_initial_deal(player_hand, dealer_hand, game):
         dealer_hand (list): The dealer's initial hand.
         game (str): The current game.
     """
-    clear_terminal()
+    content = "De kaarten worden gedeeld."
 
-    print(f"""
-{game.capitalize()} - Speelronde
-{SEPARATOR}
-""")
+    display_page(location=game.capitalize(),
+                 title="Speelronde",
+                 content=content
+                 )
 
-    print("De kaarten worden gedeeld:")
-    print()
     time.sleep(1)
-    print(f"1e kaart speler:   {format_hand([player_hand[0]])}")
+    print_message(f"1e kaart speler:   {format_hand([player_hand[0]])}")
     time.sleep(1)
-    print(f"1e kaart dealer:   {format_hand([dealer_hand[0]])}")
+    print_message(f"1e kaart dealer:   {format_hand([dealer_hand[0]])}")
     time.sleep(1)
-    print(f"2e kaart speler:   {format_hand([player_hand[1]])}")
+    print_message(f"2e kaart speler:   {format_hand([player_hand[1]])}")
     time.sleep(1)
-    print("2e kaart dealer:   ??")
+    print_message("2e kaart dealer:   ??")
     time.sleep(1)
-    print(SEPARATOR)
     print()
     get_input(CONTINUE_PROMPT)
 
@@ -445,21 +435,21 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game):
         ) = prepare_play_hand(player_hand, dealer_hand, game, actor)
 
         if player_status == "bust":
-            print(f"U heeft {int(player_hand_values)}. Player bust!")
+            print_message(f"U heeft [default]{player_hand_values}[/]. Player bust!")
             print()
             get_input(CONTINUE_PROMPT)
 
             break
 
         elif player_status == "blackjack":
-            print("U heeft blackjack!")
+            print_message("U heeft blackjack!")
             print()
             get_input(CONTINUE_PROMPT)
 
             break
 
         elif player_status == "stand":
-            print("U heeft 21!")
+            print_message("U heeft 21!")
             print()
             get_input(CONTINUE_PROMPT)
 
@@ -483,23 +473,23 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game):
                     high_card = ""
 
                 if high_card:
-                    print(
+                    print_message(
                         f"De dealer toont een {high_card} en controleert "
                         f"de gesloten kaart op blackjack",
                         end=""
                     )
                     time.sleep(1)
-                    print(".", end="")
+                    print_message("[default].[/]", end="", indent=0)
                     time.sleep(1)
-                    print(".", end="")
+                    print_message("[default].[/]", end="", indent=0)
                     time.sleep(1)
-                    print(".", end="\n")
+                    print_message("[default].[/]", indent=0)
                     print()
 
                     if dealer_status == "blackjack":
-                        print(f"Dealer draait kaarten om: {format_hand(dealer_hand)}")
+                        print_message(f"Dealer draait kaarten om: {format_hand(dealer_hand)}")
                         print()
-                        print("Dealer heeft blackjack!")
+                        print_message("Dealer heeft blackjack!")
                         print()
                         get_input(CONTINUE_PROMPT)
 
@@ -509,21 +499,20 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game):
                         break
 
                     else:
-                        print("De dealer heeft geen blackjack, het spel gaat verder.")
+                        print_message("De dealer heeft geen blackjack, het spel gaat verder.")
                         print()
 
-            print(f"""Wat wilt u doen?
-{SEPARATOR}
-1. Hit
-2. Stand
-{SEPARATOR}""")
+            menu_options = ["Hit", "Stand"]
+
+            console.print(
+                Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))
+            )
 
             menu_choice = get_menu_choice(range(1, 3))
 
             if menu_choice == 1:
-                print()
                 shoe, cards_until_shuffle, player_hand = draw_card(shoe, cards_until_shuffle, player_hand)
-                print(f"U ontvangt een extra kaart: {format_hand([player_hand[-1]])}")
+                print_message(f"U ontvangt een extra kaart: {format_hand([player_hand[-1]])}")
                 print()
                 get_input(CONTINUE_PROMPT)
 
@@ -534,8 +523,7 @@ def play_player_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game):
                 if "," in player_hand_values:
                     player_hand_values = player_hand_values[-2:]
 
-                print()
-                print(f"U heeft stand gekozen met {player_hand_values}. De beurt is aan de dealer.")
+                print_message(f"U heeft stand gekozen met [default]{player_hand_values}[/]. De beurt is aan de dealer.")
                 print()
                 get_input(CONTINUE_PROMPT)
 
@@ -563,14 +551,12 @@ def play_dealer_hand(shoe, cards_until_shuffle, player_hand, dealer_hand, game):
     """
     actor = "dealer"
 
-    clear_terminal()
+    panel_content = f"De dealer onthult de gesloten kaart: {format_hand([dealer_hand[1]])}"
 
-    print(f"""
-{game.capitalize()} - Spelopties
-{SEPARATOR}
-De dealer onthult de gesloten kaart: {format_hand([dealer_hand[1]])}
-{SEPARATOR}
-""")
+    display_page(location=game.capitalize(),
+                 title="Dealerhand",
+                 content=panel_content
+                 )
 
     get_input(CONTINUE_PROMPT)
 
@@ -586,12 +572,12 @@ De dealer onthult de gesloten kaart: {format_hand([dealer_hand[1]])}
 
         if player_status == "blackjack":
             if dealer_status == "blackjack":
-                print("Speler en dealer hebben beide blackjack! Push!")
+                print_message("Speler en dealer hebben beide blackjack! Push!")
                 print()
                 get_input(CONTINUE_PROMPT)
 
             else:
-                print("Dealer heeft geen blackjack.")
+                print_message("Dealer heeft geen blackjack.")
                 print()
                 get_input(CONTINUE_PROMPT)
 
@@ -601,19 +587,19 @@ De dealer onthult de gesloten kaart: {format_hand([dealer_hand[1]])}
 
         if dealer_status == "hit":
             shoe, cards_until_shuffle, dealer_hand = draw_card(shoe, cards_until_shuffle, dealer_hand)
-            print(f"Dealer ontvangt een extra kaart: {format_hand([dealer_hand[-1]])}")
+            print_message(f"Dealer ontvangt een extra kaart: {format_hand([dealer_hand[-1]])}")
             print()
             get_input(CONTINUE_PROMPT)
 
             continue
 
         elif dealer_status == "blackjack":
-            print("Dealer heeft blackjack!")
+            print_message("Dealer heeft blackjack!")
             print()
             get_input(CONTINUE_PROMPT)
 
         elif dealer_status == "bust":
-            print(f"Handwaarde is {dealer_hand_values}. Dealer bust!")
+            print_message(f"Handwaarde is [default]{dealer_hand_values}[/]. Dealer bust!")
             print()
             get_input(CONTINUE_PROMPT)
 
@@ -621,7 +607,7 @@ De dealer onthult de gesloten kaart: {format_hand([dealer_hand[1]])}
             if "," in dealer_hand_values:
                 dealer_hand_values = dealer_hand_values[-2:]
 
-            print(f"Handwaarde is {dealer_hand_values}. Dealer stand!")
+            print_message(f"Handwaarde is [default]{dealer_hand_values}[/]. Dealer stand!")
             print()
             get_input(CONTINUE_PROMPT)
 
@@ -649,7 +635,7 @@ def play(current_user) -> str:
     game = NAME_GAME
 
     shoe, cards_until_shuffle = get_new_shoe()
-    action, stake = prepare_game(current_user, game, GAME_INSTRUCTIONS)
+    action, stake = prepare_game(current_user, game, GAME_INSTRUCTIONS, PAYOUT_STRUCTURE)
 
     if action in ("choose_game", "main_menu"):
         return action

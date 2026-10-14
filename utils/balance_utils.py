@@ -4,6 +4,9 @@
 
 import time
 
+from rich.console import Console
+from rich.padding import Padding
+
 from utils.utils import (
     format_currency,
     get_menu_choice,
@@ -11,6 +14,7 @@ from utils.utils import (
     get_input,
     display_page,
     display_spinner,
+    display_menu_table
 )
 
 
@@ -30,6 +34,13 @@ from utils.constants import (
 
 
 # ==============================
+# CONFIGURATION
+# ==============================
+
+console = Console(width=80)
+
+
+# ==============================
 # BALANCE MANAGEMENT
 # ==============================
 
@@ -46,17 +57,18 @@ def manage_balance(current_user, fixed_costs=0.0, trigger=""):
         str: The action to perform.
     """
     while True:
-        page_content = f"""Uw huidige saldo bedraagt {format_currency(current_user["playing_balance"])}
-        
-1. Saldo storten
-2. Saldo opnemen
-
-0. Terug"""
+        page_content = f"Uw huidige saldo bedraagt {format_currency(current_user["playing_balance"])}"
 
         display_page(location=CASINO_NAME,
                      title="Saldo-overzicht",
                      content=page_content
                      )
+
+        menu_options = ["Saldo storten", "Saldo opnemen", "", "Terug"]
+
+        console.print(
+            Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))
+        )
 
         menu_choice = get_menu_choice(range(0, 3))
 

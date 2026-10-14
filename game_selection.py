@@ -2,15 +2,18 @@
 # FUNCTION IMPORTS
 # ==============================
 
+from rich.console import Console
+from rich.padding import Padding
+
 from games import (
     roulette,
     slot_machine,
     blackjack,
 )
 from utils.utils import (
-    blank_lines,
     get_menu_choice,
     display_page,
+    display_menu_table,
 )
 
 
@@ -26,6 +29,8 @@ from utils.constants import (
 # ==============================
 # CONFIGURATION
 # ==============================
+
+console = Console(width=80)
 
 AVAILABLE_GAMES = {
     1: ("Roulette", roulette),
@@ -45,23 +50,26 @@ def choose_game(current_user):
         current_user (dict): The profile of the current user.
     """
     while True:
-        menu = []
-
-        for game_number, (game_name, _) in AVAILABLE_GAMES.items():
-            menu.append(f"{game_number}. {game_name}")
-
-        menu.append("")
-        menu.append("0. Terug naar hoofdmenu")
-
-        menu = "\n".join(menu)
+        content = "U vindt hier u een overzicht van de beschikbare spellen."
 
         display_page(location=CASINO_NAME,
                      title="Spellen",
-                     content=menu
+                     content=content
                      )
 
+        menu_options = []
+
+        for game_number, (game_name, _) in AVAILABLE_GAMES.items():
+            menu_options.append(f"{game_number}. {game_name}")
+
+        menu_options.append("")
+        menu_options.append("0. Terug")
+
+        console.print(
+            Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))
+        )
+
         menu_choice = get_menu_choice(range(0, len(AVAILABLE_GAMES) + 1))
-        blank_lines(2)
 
         if menu_choice == 0:
             break
@@ -70,7 +78,6 @@ def choose_game(current_user):
         action = game_module.play(current_user)
 
         if action == "main_menu":
-            blank_lines(2)
             break
 
         # The "choose_game" action naturally returns to this selection menu.

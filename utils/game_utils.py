@@ -2,17 +2,20 @@
 # FUNCTION IMPORTS
 # ==============================
 
+from rich.console import Console
+from rich.padding import Padding
+
 from utils.balance_utils import (
     manage_balance,
 )
 from utils.utils import (
-    blank_lines,
     format_currency,
     get_menu_choice,
     print_message,
     get_input,
     display_page,
     display_panel,
+    display_menu_table,
 )
 
 
@@ -24,6 +27,13 @@ from utils.constants import (
     CONTINUE_PROMPT,
     INVALID_INPUT,
 )
+
+
+# ==============================
+# CONFIGURATION
+# ==============================
+
+console = Console(width=80)
 
 
 # ==============================
@@ -65,35 +75,31 @@ def get_game_action(game) -> str:
     Returns:
         str: The selected action.
     """
-    content = """U heeft gekozen om het spel te stoppen. Wat wilt u doen?
-
-1. Verder spelen
-2. Inzet aanpassen
-3. Ander spel kiezen
-
-0. Terug naar de lobby"""
+    content = "U heeft gekozen om het spel te stoppen. Wat wilt u doen?"
 
     display_page(location=game.capitalize(),
                  title="Spelopties",
                  content=content
                  )
 
+    menu_options = ["Verder spelen", "Inzet aanpassen", "Ander spel kiezen", "", "Terug naar de lobby"]
+
+    console.print(
+        Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))
+    )
+
     menu_choice = get_menu_choice(range(0, 4))
 
     if menu_choice == 1:
-        blank_lines(2)
         action = "continue"
 
     elif menu_choice == 2:
-        blank_lines(2)
         action = "change_stake"
 
     elif menu_choice == 3:
-        blank_lines(2)
         action = "choose_game"
 
     else:
-        blank_lines(2)
         action = "main_menu"
 
     return action
@@ -114,20 +120,20 @@ def game_menu(current_user, game, game_instructions) -> str:
     action = "continue"
 
     while True:
-        content = """1. Spel starten
-2. Spelinstructies
-3. Saldo-overzicht
-
-0. Stoppen """
+        content = "U bevindt zich in het spelmenu."
 
         display_page(location=game.capitalize(),
                      title="Spelmenu",
                      content=content
                      )
 
-        menu_choice = get_menu_choice(range(0, 4))
+        menu_options = ["Spel starten", "Spelinstructies", "", "Saldo-overzicht", "", "Stoppen"]
 
-        blank_lines(2)
+        console.print(
+            Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))
+        )
+
+        menu_choice = get_menu_choice(range(0, 4))
 
         if menu_choice == 2:
             show_game_instructions(game, game_instructions)
@@ -169,12 +175,11 @@ Huidige inzet:   {format_currency(stake)}"""
                      content=page_content
                      )
 
-        panel_content = """1. Nieuwe ronde
-2. Inzet wijzigen
+        menu_options = ["Nieuwe ronde", "Inzet wijzigen", "", "Stoppen"]
 
-0. Stoppen"""
-
-        display_panel(panel_content, title="Opties")
+        console.print(
+            Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))
+        )
 
         menu_choice = get_menu_choice(range(0, 3))
 
@@ -182,7 +187,6 @@ Huidige inzet:   {format_currency(stake)}"""
             action = "continue"
 
         elif menu_choice == 2:
-            print()
             action = "change_stake"
 
         else:
@@ -212,14 +216,13 @@ def handle_insufficient_balance(current_user, game) -> str:
         str: The selected action.
     """
     while True:
-        panel_content = """Uw saldo is ontoereikend voor deze inzet.
+        print_message("Uw saldo is ontoereikend voor deze inzet.", "red")
 
-1. Inzet wijzigen
-2. Saldo wijzigen
+        menu_options = ["Inzet wijzigen", "Saldo wijzigen", "", "Terug"]
 
-0. Terug"""
-
-        display_panel(panel_content)
+        console.print(
+            Padding(display_menu_table(menu_options, width=70), (1, 0, 1, 5))
+        )
 
         menu_choice = get_menu_choice(range(0, 3))
 
@@ -228,7 +231,6 @@ def handle_insufficient_balance(current_user, game) -> str:
             action = "change_stake"
 
         elif menu_choice == 2:
-            blank_lines(2)
             manage_balance(current_user, trigger=game)
             action = "new_playing_balance"
 
@@ -284,7 +286,6 @@ def get_stake(current_user, stake, game, show_header=True) -> tuple[str, int | f
                 continue
 
             if stake > current_user["playing_balance"]:
-                blank_lines(2)
                 action = handle_insufficient_balance(current_user, game)
 
                 if action in ("continue", "change_stake"):

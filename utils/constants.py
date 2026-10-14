@@ -3,28 +3,15 @@
 # ==============================
 
 CASINO_NAME = "Casino de Gouden Driehoek"
-SEPARATOR = "-" * 50
 
 
 # ==============================
 # USER INTERFACE
 # ==============================
 
-INVALID_INPUT = "\nOngeldige invoer. Probeer het opnieuw.\n"
+INVALID_INPUT = f"\n{" " * 5}Ongeldige invoer. Probeer het opnieuw.\n"
 CONTINUE_PROMPT = "Druk op Enter om verder te gaan."
 CHOOSE_OPTION = "Kies een optie: "
-
-
-# ==============================
-# CONSOLE STYLING
-# ==============================
-
-BLACK = "\033[30m"
-GREEN = "\033[32m"
-RED = "\033[31m"
-ORANGE = "\033[38;5;208m"
-RESET = "\033[0m"
-WHITE_BACKGROUND = "\033[47m"
 
 
 # ==============================

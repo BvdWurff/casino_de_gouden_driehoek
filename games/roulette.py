@@ -6,6 +6,10 @@ import random
 import time
 
 from rich.console import Console
+from rich.padding import Padding
+from rich.table import Table
+from rich import box
+from rich.text import Text
 
 from utils.game_utils import (
     get_game_action,
@@ -17,14 +21,12 @@ from utils.game_utils import (
 )
 
 from utils.utils import (
-    blank_lines,
-    clear_terminal,
     format_currency,
     get_menu_choice,
     print_message,
     get_input,
     display_page,
-    display_panel,
+    display_menu_table,
 )
 
 
@@ -33,14 +35,8 @@ from utils.utils import (
 # ==============================
 
 from utils.constants import (
-    BLACK,
     CONTINUE_PROMPT,
-    GREEN,
     INVALID_INPUT,
-    RED,
-    RESET,
-    SEPARATOR,
-    WHITE_BACKGROUND,
 )
 
 
@@ -110,19 +106,39 @@ def get_bet_choice(recent_results, game):
 {format_recent_results(recent_results)}
 
 """
+        menu_options = {"Rood": 1, "Zwart": 1, "Groen": 35, "Even": 1, "Oneven": 1, "Nummer": 35, "": "", "Stoppen": ""}
+        # content = display_menu_table(menu_options)
 
-        content += """1. Rood   - winst: 1x inzet
-2. Zwart  - winst: 1x inzet
-3. Groen  - winst: 35x inzet
-4. Even   - winst: 1x inzet
-5. Oneven - winst: 1x inzet
-6. Nummer - winst: 35x inzet
+        table = Table(
+            box=box.SQUARE,
+            expand=True,
+            header_style="bold bright_white",
+            border_style="bright_yellow",
+            padding=(0, 1),
+            width=64
+        )
 
-0. Stoppen"""
+        table.add_column("Optie", min_width=4)
+        table.add_column("Actie")
+        table.add_column("Uitbetaling")
+
+        counter = 0
+
+        for menu_option,payout in menu_options.items():
+            counter += 1
+
+            if menu_option == "":
+                counter = -1
+
+            table.add_row(
+                Text(f"{str(counter)}.") if menu_option else Text(""),
+                Text(str(menu_option)),
+                Text(f"{str(payout)}x inzet") if payout else Text("")
+            )
 
         display_page(location=game.capitalize(),
                      title="Inzetmogelijkheden",
-                     content=content
+                     content=table
                      )
 
         bet_choice = get_menu_choice(range(0, 7))
@@ -225,19 +241,15 @@ Laatste resultaten:
                      content=page_content
                      )
 
-        panel_content = """1. Spelen met huidige inzet
-2. Keuze aanpassen
-3. Inzet aanpassen
-4. Keuze en inzet aanpassen
+        menu_options = ["Spelen met huidige inzet", "Keuze aanpassen", "Inzet aanpassen", "Keuze en inzet aanpassen", "", "Stoppen"]
 
-0. Stoppen"""
-
-        display_panel(panel_content, title="Opties")
+        console.print(
+            Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))
+        )
 
         menu_choice = get_menu_choice(range(0, 5))
 
         if menu_choice == 1:
-            blank_lines(2)
             return "continue", stake, bet_choice, selected_number
 
         if menu_choice == 0:
@@ -253,7 +265,6 @@ Laatste resultaten:
             menu_choice = 3
 
         if menu_choice == 2:
-            blank_lines(2)
             action, stake, bet_choice, selected_number = change_bet(
                 current_user,
                 stake,

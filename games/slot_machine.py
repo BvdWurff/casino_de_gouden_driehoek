@@ -11,9 +11,12 @@ from utils.game_utils import (
     prepare_game,
     show_game_results,
     update_game_stats,
+
 )
 from utils.utils import (
-    clear_terminal,
+    display_page,
+    print_message,
+    get_input,
 )
 
 
@@ -24,8 +27,7 @@ from utils.utils import (
 from utils.constants import (
     JACKPOT_SYMBOL,
     MATCH_MULTIPLIERS,
-    SEPARATOR,
-    SYMBOL_MULTIPLIERS,
+    SYMBOL_MULTIPLIERS, CONTINUE_PROMPT,
 )
 
 
@@ -133,40 +135,37 @@ def show_spin_results(spin_results, game):
         spin_results (list): The symbols generated for the three reels.
         game (str): The current game.
     """
-    clear_terminal()
-
     symbol_1 = get_symbol(spin_results[0])
     symbol_2 = get_symbol(spin_results[1])
     symbol_3 = get_symbol(spin_results[2])
 
-    print(f"""
-{game.capitalize()} - Speelronde
-{SEPARATOR}""")
+    content = "Het spel gaat beginnen."
 
-    input("Druk op Enter om de hendel over te halen.")
+    display_page(location=game.capitalize(),
+                 title="Speelronde",
+                 content=content
+                 )
 
-    print("""
-De rollen beginnen te draaien. Veel geluk!
-""")
-
+    get_input("Druk op Enter om de hendel over te halen.")
+    print()
+    print_message("De rollen beginnen te draaien. Veel geluk!")
+    print()
     time.sleep(1)
-    print("...")
+    print_message("[default]...[/]")
     time.sleep(1)
-    print("...")
+    print_message("[default]...[/]")
     time.sleep(1)
-    print("...")
+    print_message("[default]...[/]")
     time.sleep(1)
 
     print()
-    print(f"[ {symbol_1} ]", end="")
+    print_message(f"[bold bright_yellow][{symbol_1}][/]", end="")
     time.sleep(1)
-    print(f"[ {symbol_2} ]", end="")
+    print_message(f"[bold bright_yellow][{symbol_2}][/]", end="", indent=1)
     time.sleep(1)
-    print(f"[ {symbol_3} ]")
+    print_message(f"[bold bright_yellow][{symbol_3}][/]", indent=1)
     print()
-    print(SEPARATOR)
-    print()
-    time.sleep(1)
+    get_input(CONTINUE_PROMPT)
 
 
 # ==============================

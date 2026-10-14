@@ -2,6 +2,9 @@
 # FUNCTION IMPORTS
 # ==============================
 
+from rich.console import Console
+from rich.padding import Padding
+
 from game_selection import (
     choose_game,
 )
@@ -18,13 +21,13 @@ from profiles import (
     show_profile_menu,
 )
 from utils.utils import (
-    blank_lines,
     format_currency,
     get_confirmation,
     get_menu_choice,
     print_message,
     get_input,
     display_page,
+    display_menu_table,
 )
 
 # ==============================
@@ -36,6 +39,13 @@ from utils.constants import (
     CONTINUE_PROMPT,
     RED,
 )
+
+
+# ==============================
+# CONFIGURATION
+# ==============================
+
+console = Console(width=80)
 
 
 # ==============================
@@ -69,24 +79,6 @@ Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!"""
 # MENUS AND NAVIGATION
 # ==============================
 
-def show_welcome_page():
-    """
-    Displays the casino welcome message
-
-    """
-    content = f"""Welkom bij {CASINO_NAME}!
-
-Voor de beste weergave wordt aangeraden het programma in een [i]terminal[/] uit te voeren
-of in PyCharm [i]Emulate terminal in output console[/] in te schakelen."""
-
-    display_page(location=CASINO_NAME,
-                 title="Startpagina",
-                 content=content
-                 )
-
-    get_input(CONTINUE_PROMPT)
-
-
 def show_login_page():
     """
     Displays the login menu
@@ -98,15 +90,21 @@ def show_login_page():
         starting_balance = 0.0
         current_user = {}
 
-        content = f"""1. Inloggen
-2. Profiel aanmaken
+        content = f"""Welkom bij {CASINO_NAME}!
 
-0. Stoppen"""
+Voor de beste weergave wordt aangeraden het programma in een [i]terminal[/] uit te voeren
+of in PyCharm [i]Emulate terminal in output console[/] in te schakelen."""
 
         display_page(location=CASINO_NAME,
                      title="Inlogpagina",
                      content=content
                      )
+
+        menu_options = ["Inloggen", "Profiel aanmaken", "", "Stoppen"]
+
+        console.print(
+            Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))
+        )
 
         menu_choice = get_menu_choice(range(0, 3))
 
@@ -134,11 +132,8 @@ def show_login_page():
             confirmation = get_confirmation("stoppen")
 
             if confirmation:
-                blank_lines(2)
                 show_parting_message(trigger="start_page")
                 exit(0)
-
-            blank_lines(2)
 
     return current_user, starting_balance,
 
@@ -151,16 +146,18 @@ def main_menu(current_user):
         current_user (dict): The profile of the current user.
     """
     while True:
-        content = f"""1. Spellen
-2. Saldo
-3. Profiel
-
-0. Casino verlaten"""
+        content = "U bevindt zich in de lobby van het casino."
 
         display_page(location=CASINO_NAME,
                      title="Lobby",
                      content=content
                      )
+
+        menu_options = ["Spellen", "Saldo", "Profiel", "", "Casino verlaten"]
+
+        console.print(
+            Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))
+        )
 
         menu_choice = get_menu_choice(range(0, 4))
 
@@ -199,7 +196,6 @@ def main():
     """
     Controls the main program flow.
     """
-    show_welcome_page()
     current_user, starting_balance = show_login_page()
     vat_amount, fixed_costs = calculate_costs()
 

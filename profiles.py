@@ -6,6 +6,12 @@ import json
 import datetime
 import copy
 
+from rich import box
+from rich.padding import Padding
+from rich.table import Table
+from rich.text import Text
+from rich.console import Console
+
 from utils.utils import (
     get_menu_choice,
     print_message,
@@ -15,6 +21,7 @@ from utils.utils import (
     display_page,
     display_panel,
     display_spinner,
+    display_menu_table,
 )
 
 
@@ -32,6 +39,13 @@ from utils.constants import (
     VAT_RATE,
     MIN_AGE,
 )
+
+
+# ==============================
+# CONFIGURATION
+# ==============================
+
+console = Console(width=80)
 
 
 # ==============================
@@ -286,6 +300,7 @@ def login(current_user):
         if username not in profiles:
             username = ""
             print_message("Onbekende gebruikersnaam.", "red")
+            print()
 
         else:
             profile = profiles[username]
@@ -293,24 +308,26 @@ def login(current_user):
             if password != profile["password"]:
                 password = ""
                 print_message("Ongeldig wachtwoord.", "red")
+                print()
 
         if username and password:
             if not current_user:
                 print_message("U bent succesvol ingelogd.", "green")
+                print()
             else:
                 save_profiles(current_user)
                 print_message("U bent succesvol van profiel gewisseld.", "green")
+                print()
 
-            print()
             get_input(CONTINUE_PROMPT)
             break
 
         else:
-            panel_content = """1. Nogmaals proberen
-2. Profiel aanmaken
+            menu_options = ["Nogmaals proberen", "Profiel aanmaken", "", "Terug"]
 
-0. Terug"""
-            display_panel(panel_content)
+            console.print(
+                Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))
+            )
 
             menu_choice = get_menu_choice(range(0, 3))
 
@@ -519,15 +536,18 @@ def delete_profile(current_user):
         current_user (dict): The profile of the current user.
     """
     while True:
-        content = f"""1. Profieloverzicht
-2. Profiel verwijderen
-
-0. Terug"""
+        content = "Hier kunt u profielen verwijderen."
 
         display_page(location=CASINO_NAME,
                      title="Profiel verwijderen",
                      content=content
                      )
+
+        menu_options = [" Profieloverzicht", "Profiel verwijderen", "", "Terug"]
+
+        console.print(
+            Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))
+        )
 
         menu_choice = get_menu_choice(range(0, 3))
 
@@ -745,25 +765,44 @@ def show_all_profiles(current_user):
                  content=content
                  )
 
-    available_profiles = []
+    table = Table(
+        box=box.SQUARE,
+        expand=True,
+        header_style="bold bright_white",
+        border_style="bright_yellow",
+        padding=(0, 1),
+        width=70
+    )
 
-    for username in sorted(profiles.keys()):
-        name = profiles[username]["first_name"]
+    table.add_column("Gebruikersnaam", min_width=4)
+    table.add_column("Naam")
+    table.add_column("Saldo")
 
-        if profiles[username]["surname_prefix"]:
-            name += f" {profiles[username]["surname_prefix"]}"
+    for username in sorted(profiles):
+        profile = profiles[username]
 
-        name += f" {profiles[username]["surname"]}"
+        name = " ".join(
+            part
+            for part in (
+                profile["first_name"],
+                profile["surname_prefix"],
+                profile["surname"],
+            )
+            if part
+        )
 
-        available_profiles.append(username)
-        available_profiles.append(f"    Naam:       {name}")
-        available_profiles.append(f"    Saldo:      {format_currency(profiles[username]["playing_balance"])}")
-        available_profiles.append("")
+        table.add_row(
+            Text(username),
+            Text(name),
+            Text(format_currency(profile["playing_balance"])),
+        )
 
-    del available_profiles[-1]
-    available_profiles = "\n".join(available_profiles)
-
-    display_panel(available_profiles)
+    console.print(
+        Padding(
+            table,
+            (0, 0, 1, 5),
+        )
+    )
 
     get_input(CONTINUE_PROMPT)
 
@@ -806,7 +845,7 @@ Totaal:             - {format_currency(fixed_costs)}
 Saldo:                {format_currency(current_user["playing_balance"])}"""
 
     title = "[bold bright_white]Kostenoverzicht[/]"
-    display_panel(panel_content, title=title, title_align="left",)
+    display_panel(panel_content, title=title)
 
     print_message(f"U heeft {balance_status_text} budget voor toegang tot het casino.", "green")
 
@@ -853,20 +892,19 @@ def show_profile_menu(current_user):
         dict: The active user profile.
     """
     while True:
-        content = """1. Mijn profiel
-2. Mijn spelstatistieken
-3. Wachtwoord wijzigen
-4. Nieuw profiel aanmaken
-5. Profiel verwijderen
-6. Van profiel wisselen
-7. Toon alle profielen
-
-0. Terug"""
+        content = "Beheer hier uw profiel."
 
         display_page(location=CASINO_NAME,
                      title="Profielbeheer",
                      content=content
                      )
+
+        menu_options = ["Mijn profiel", "Mijn spelstatistieken", "Wachtwoord wijzigen", "Nieuw profiel aanmaken",
+                        "Profiel verwijderen", "Van profiel wisselen", "Toon alle profielen", "", "Terug"]
+
+        console.print(
+            Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))
+        )
 
         menu_choice = get_menu_choice(range(0, 8))
 

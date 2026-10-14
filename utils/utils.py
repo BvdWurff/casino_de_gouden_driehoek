@@ -11,6 +11,9 @@ from rich.padding import Padding
 from rich.panel import Panel
 from rich.live import Live
 from rich.spinner import Spinner
+from rich.table import Table
+from rich import box
+from rich.text import Text
 
 # ==============================
 # CONSTANTS
@@ -25,22 +28,12 @@ from utils.constants import (
 # CONFIGURATION
 # ==============================
 
-console = Console(width=100)
+console = Console(width=80)
 
 
 # ==============================
 # GENERAL UTILITIES
 # ==============================
-
-def blank_lines(number):
-    """
-    Prints the specified number of blank lines.
-
-    Args:
-        number (int): The number of blank lines to print.
-    """
-    print("\n" * number, end="")
-
 
 def clear_terminal():
     """
@@ -116,22 +109,26 @@ def get_menu_choice(valid_choices):
         return menu_choice
 
 
-def print_message(message, color=""):
+def print_message(message, color="", end="\n", indent=5):
     """
     Prints a formatted message with optional text and background colors.
 
     Args:
         message (str): The message to display.
         color (str): The optional text color.
+        end (str): Define alternative end for the print message.
+        indent (int): number of spaces used for left padding
     """
 
     console.print(
-        Padding(f"{message}", (0, 5)),
+        f"{" " * indent}{message}",
         style=f"{color}",
+        end=end
     )
 
 
 def get_input(message, color="bright_white"):
+
     return console.input(f"{' ' * 5}[{color}]{message}[/]")
 
 
@@ -145,22 +142,23 @@ def display_page(location, title, content):
     console.print(
         Padding(
             Panel(
-                f"{content}",
+                content,
                 title=f"[bold bright_yellow]{location}[/] [bold bright_white]- {title}[/]",
+                title_align="left",
                 border_style="bright_yellow",
                 padding=(1, 2),
             ),
             (1, 5))
     )
 
-def display_panel(content, border_style="bright_yellow", title_color="bright_white", title="", title_align="left" ):
+def display_panel(content, border_style="bright_yellow", title_color="bright_white", title=""):
     console.print(
         Padding(
             Panel(
-                f"{content}",
+                content,
                 border_style=border_style,
                 title=f"[bold {title_color}]{title}[/]",
-                title_align=title_align,
+                title_align="left",
                 padding=(1, 2),
             ),
             (0, 5)
@@ -182,5 +180,35 @@ def display_spinner(text, style="dots"):
             transient=True
     ):
         time.sleep(2)
+
+def display_menu_table(menu_options, width=64):
+    table = Table(
+        box=box.SQUARE,
+        expand=True,
+        header_style="bold bright_white",
+        border_style="bright_yellow",
+        padding=(0, 1),
+        width=width
+    )
+
+    table.add_column("Optie", min_width=4)
+    table.add_column("Actie")
+
+    counter = 0
+
+    for menu_option in menu_options:
+        counter += 1
+
+        if menu_option == "":
+            counter = -1
+
+
+        table.add_row(
+            Text(f"{str(counter)}.") if menu_option else Text(""),
+            Text(str(menu_option)),
+        )
+
+    return table
+
 
 
