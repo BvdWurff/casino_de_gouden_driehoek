@@ -6,9 +6,9 @@
         "surname": "Wurff",
         "birth_date": "26-08-1985",
         "gender": "man",
-        "playing_balance": 2350.0,
+        "playing_balance": 2439.45,
         "source": "create_account",
-        "visits": 39,
+        "visits": 42,
         "played_games": {
             "roulettetafel": {
                 "games_played": 1,

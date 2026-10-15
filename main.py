@@ -8,6 +8,9 @@ from rich.padding import Padding
 from game_selection import (
     choose_game,
 )
+from exchange import (
+    run_exchange,
+)
 from utils.balance_utils import (
     manage_balance,
     determine_balance_status,
@@ -64,7 +67,7 @@ def show_parting_message(current_user=None, trigger=""):
 Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!"""
 
     else:
-        content = f"""U verlaat het casino met een eindsaldo van {format_currency(current_user["playing_balance"])}.
+        content = f"""U verlaat het casino met een eindsaldo van {format_currency(current_user["playing_balance"])}.\n
 Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!"""
 
 
@@ -155,13 +158,13 @@ def main_menu(current_user):
                      content=content
                      )
 
-        menu_options = ["Spellen", "Saldo", "Profiel", "", "Casino verlaten"]
+        menu_options = ["Spellen", "Saldo", "Profiel", "Wisselkantoor", "", "Casino verlaten"]
 
         console.print(
             Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))
         )
 
-        menu_choice = get_menu_choice(range(0, 4))
+        menu_choice = get_menu_choice(range(0, 5))
 
         if menu_choice == 1:
             if current_user["playing_balance"] <= 0:
@@ -180,6 +183,9 @@ def main_menu(current_user):
 
         elif menu_choice == 3:
             current_user = show_profile_menu(current_user)
+
+        elif menu_choice == 4:
+            current_user = run_exchange(current_user)
 
         elif menu_choice == 0:
             confirmation = get_confirmation("stoppen")
