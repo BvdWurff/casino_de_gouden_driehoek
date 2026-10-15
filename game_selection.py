@@ -60,10 +60,10 @@ def choose_game(current_user):
         menu_options = []
 
         for game_number, (game_name, _) in AVAILABLE_GAMES.items():
-            menu_options.append(f"{game_number}. {game_name}")
+            menu_options.append(f"{game_name}")
 
         menu_options.append("")
-        menu_options.append("0. Terug")
+        menu_options.append("Terug")
 
         console.print(
             Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))

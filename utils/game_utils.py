@@ -127,7 +127,7 @@ def game_menu(current_user, game, game_instructions) -> str:
                      content=content
                      )
 
-        menu_options = ["Spel starten", "Spelinstructies", "", "Saldo-overzicht", "", "Stoppen"]
+        menu_options = ["Spel starten", "Spelinstructies", "Saldo-overzicht", "", "Stoppen"]
 
         console.print(
             Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))

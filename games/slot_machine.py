@@ -114,7 +114,7 @@ def get_symbol(symbol):
         symbol (str): The internal symbol name.
 
     Returns:
-    str: The display symbol for the slot machine.
+        str: The display symbol for the slot machine.
     """
     match symbol:
         case "cherry":

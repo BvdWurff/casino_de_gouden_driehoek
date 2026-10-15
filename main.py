@@ -37,7 +37,6 @@ from utils.utils import (
 from utils.constants import (
     CASINO_NAME,
     CONTINUE_PROMPT,
-    RED,
 )
 
 
@@ -65,7 +64,7 @@ def show_parting_message(current_user=None, trigger=""):
 Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!"""
 
     else:
-        content = f""""U verlaat het casino met een eindsaldo van {format_currency(current_user["playing_balance"])}.
+        content = f"""U verlaat het casino met een eindsaldo van {format_currency(current_user["playing_balance"])}.
 Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!"""
 
 
@@ -144,6 +143,9 @@ def main_menu(current_user):
 
     Args:
         current_user (dict): The profile of the current user.
+
+    Returns:
+        dict: The active user profile.
     """
     while True:
         content = "U bevindt zich in de lobby van het casino."
@@ -164,7 +166,7 @@ def main_menu(current_user):
         if menu_choice == 1:
             if current_user["playing_balance"] <= 0:
                 print()
-                print_message("U heeft onvoldoende saldo om te spelen.", RED)
+                print_message("U heeft onvoldoende saldo om te spelen.", "red")
                 print()
                 get_input(CONTINUE_PROMPT)
 

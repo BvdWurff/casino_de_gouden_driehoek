@@ -131,7 +131,7 @@ def check_age(birth_date) -> str:
         birth_date (datetime.datetime): The guest's birthdate.
 
     Returns:
-        str: The age status.
+        str: "underage" if the guest is too young, otherwise "continue".
     """
     current_date = datetime.datetime.now()
     minimum_age_year = birth_date.year + MIN_AGE
@@ -266,7 +266,8 @@ def login(current_user):
         current_user (dict): The profile of the currently logged-in user.
 
     Returns:
-        tuple: The current user profile and starting balance.
+        tuple: The authenticated user profile and starting balance,
+        or (None, 0.0) when login is cancelled.
     """
     while True:
         profile = {}
@@ -504,6 +505,12 @@ def create_profile() -> dict | None:
     return current_user
 
 def show_available_profiles(current_user):
+    """
+    Displays the available profiles, excluding the current user.
+
+    Args:
+        current_user (dict): The profile of the current user.
+    """
     available_profiles = []
 
     for profile in sorted(profiles.keys()):

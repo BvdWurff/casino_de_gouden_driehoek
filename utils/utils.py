@@ -111,13 +111,13 @@ def get_menu_choice(valid_choices):
 
 def print_message(message, color="", end="\n", indent=5):
     """
-    Prints a formatted message with optional text and background colors.
+    Prints a formatted and indented message using Rich.
 
     Args:
         message (str): The message to display.
-        color (str): The optional text color.
-        end (str): Define alternative end for the print message.
-        indent (int): number of spaces used for left padding
+        color (str): The optional Rich style applied to the message.
+        end (str): The string appended after the message.
+        indent (int): The number of spaces used for left indentation.
     """
 
     console.print(
@@ -128,15 +128,42 @@ def print_message(message, color="", end="\n", indent=5):
 
 
 def get_input(message, color="bright_white"):
+    """
+    Requests user input using a formatted Rich prompt.
 
+    Args:
+        message (str): The message displayed to the user.
+        color (str): The color of the input prompt.
+
+    Returns:
+        str: The user's input.
+    """
     return console.input(f"{' ' * 5}[{color}]{message}[/]")
 
 
 def get_password(message, color="bright_white"):
+    """
+    Requests a password without displaying the entered characters.
+
+    Args:
+        message (str): The message displayed to the user.
+        color (str): The color of the input prompt.
+
+    Returns:
+        str: The entered password.
+    """
     return console.input(f"{' ' * 5}[{color}]{message}[/]", password=True)
 
 
 def display_page(location, title, content):
+    """
+    Clears the terminal and displays a formatted page in a Rich Panel.
+
+    Args:
+        location (str): The location displayed in the panel title.
+        title (str): The title of the current page.
+        content (str or Rich renderable): The content to display.
+    """
     clear_terminal()
 
     console.print(
@@ -152,6 +179,15 @@ def display_page(location, title, content):
     )
 
 def display_panel(content, border_style="bright_yellow", title_color="bright_white", title=""):
+    """
+    Displays content in a formatted Rich Panel.
+
+    Args:
+        content (str or Rich renderable): The content to display.
+        border_style (str): The color or style of the panel border.
+        title_color (str): The color of the panel title.
+        title (str): The optional panel title.
+    """
     console.print(
         Padding(
             Panel(
@@ -167,6 +203,13 @@ def display_panel(content, border_style="bright_yellow", title_color="bright_whi
     print()
 
 def display_spinner(text, style="dots"):
+    """
+    Displays a temporary Rich loading animation.
+
+    Args:
+        text (str): The message displayed during the animation.
+        style (str): The Rich spinner animation type.
+    """
     with Live(
             Padding.indent(
                 Spinner(
@@ -182,6 +225,16 @@ def display_spinner(text, style="dots"):
         time.sleep(2)
 
 def display_menu_table(menu_options, width=64):
+    """
+    Creates a formatted Rich Table containing numbered menu options.
+
+    Args:
+        menu_options (list): The menu options to display.
+        width (int): The width of the table.
+
+    Returns:
+        Table: The formatted Rich menu table.
+    """
     table = Table(
         box=box.SQUARE,
         expand=True,

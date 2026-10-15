@@ -452,7 +452,7 @@ def get_font_color(color):
         color (str): The roulette color.
 
     Returns:
-        str: The corresponding ANSI console color.
+        str: The Rich color name corresponding to the roulette color.
     """
     font_color = ""
 

@@ -259,8 +259,8 @@ def process_payout(current_user, game_result, stake, game):
     Calculates the blackjack payout and updates the playing balance.
 
     Args:
-        game_result (str): The result of the blackjack round.
         current_user (dict): The profile of the current user.
+        game_result (str): The result of the blackjack round.
         stake (int or float): The amount that was wagered.
         game (str): The current game.
     """
