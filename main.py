@@ -1,116 +1,238 @@
-import datetime
-import game_selection
+# ==============================
+# FUNCTION IMPORTS
+# ==============================
 
-SEPARATOR = '-' * 32
-MIN_AGE = 18
-INVALID_ANSWER = "Ongeldige invoer. Probeer het opnieuw."
+from rich.console import Console
+from rich.padding import Padding
 
-# Vaste casino kosten
-ADMISSION_PRICE = 5.00
-SERVICE_FEE = 3.50
-MANDATORY_DRINK_PRICE = 2.70
-VAT_RATE = 21.0
+from game_selection import (
+    choose_game,
+)
+from utils.balance_utils import (
+    manage_balance,
+    determine_balance_status,
+    calculate_costs,
+)
+from profiles import (
+    login,
+    create_profile,
+    save_profiles,
+    show_registration_summary,
+    show_profile_menu,
+)
+from utils.utils import (
+    format_currency,
+    get_confirmation,
+    get_menu_choice,
+    print_message,
+    get_input,
+    display_page,
+    display_menu_table,
+)
 
-print()
-print("Welkom bij Casino de Gouden Driehoek.")
-print("Vul onderstaande gegevens in om toegang te krijgen.")
-print()
+# ==============================
+# CONSTANTS
+# ==============================
 
-# Invoer gebruikersgegevens + validatie of gegevens correct zijn ingevoerd.
-first_name = input("Wat is uw voornaam? ").title()
-while not first_name:
-    print(INVALID_ANSWER)
-    print()
-    first_name = input("Wat is uw voornaam? ").title()
-infix = input("Wat zijn uw tussenvoegsels? (druk op Enter indien niet van toepassing) ")
-surname = input("Wat is uw achternaam? ").title()
-while not surname:
-    print(INVALID_ANSWER)
-    print()
-    surname = input("Wat is uw achternaam? ").title()
-if infix:
-    surname = infix + " " + surname
-date_of_birth = input("Wat is uw geboortedatum? (dd-mm-jjjj) ")
-while not date_of_birth:
-    print(INVALID_ANSWER)
-    print()
-    date_of_birth = input("Wat is uw geboortedatum? (dd-mm-jjjj) ")
-gender = input("Wat is uw geslacht? (man/vrouw/anders) ").lower()
-while not gender:
-    print(INVALID_ANSWER)
-    print()
-    gender = input("Wat is uw geslacht? (man/vrouw/anders) ").lower()
-while True:
-    try:
-        starting_balance = float(input("Wat is uw startbudget? €"))
-        if starting_balance > 0:
+from utils.constants import (
+    CASINO_NAME,
+    CONTINUE_PROMPT,
+)
+
+
+# ==============================
+# CONFIGURATION
+# ==============================
+
+console = Console(width=80)
+
+
+# ==============================
+# OUTPUT
+# ==============================
+
+def show_parting_message(current_user=None, trigger=""):
+    """
+    Displays the checkout message and final playing balance.
+
+    Args:
+        current_user (dict or None): The profile of the current user.
+        trigger (str): Location the function is triggered from.
+    """
+    if trigger == "start_page":
+        content = f"""U verlaat het casino.
+Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!"""
+
+    else:
+        content = f"""U verlaat het casino met een eindsaldo van {format_currency(current_user["playing_balance"])}.
+Bedankt voor uw bezoek aan {CASINO_NAME} en graag tot ziens!"""
+
+
+    display_page(location=CASINO_NAME,
+                 title="Vertrek",
+                 content=content
+                 )
+
+
+# ==============================
+# MENUS AND NAVIGATION
+# ==============================
+
+def show_login_page():
+    """
+    Displays the login menu
+
+    Returns:
+        tuple: The current user and starting balance.
+    """
+    while True:
+        starting_balance = 0.0
+        current_user = {}
+
+        content = f"""Welkom bij {CASINO_NAME}!
+
+Voor de beste weergave wordt aangeraden het programma in een [i]terminal[/] uit te voeren
+of in PyCharm [i]Emulate terminal in output console[/] in te schakelen."""
+
+        display_page(location=CASINO_NAME,
+                     title="Inlogpagina",
+                     content=content
+                     )
+
+        menu_options = ["Inloggen", "Profiel aanmaken", "", "Stoppen"]
+
+        console.print(
+            Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))
+        )
+
+        menu_choice = get_menu_choice(range(0, 3))
+
+        if menu_choice == 1:
+            logged_in_user, starting_balance = login(current_user)
+
+            if logged_in_user is None:
+                continue
+
+            current_user = logged_in_user
             break
-        else:
-            print(INVALID_ANSWER)
-    except ValueError:
-        print(INVALID_ANSWER)
 
-# Huidige datum bepalen en geboortedatum omzetten naar een datetime-object
-current_date = datetime.datetime.now()
-birth_day, birth_month, birth_year = date_of_birth.split("-")
-birth_date = datetime.datetime(int(birth_year), int(birth_month), int(birth_day))
 
-# Datum berekenen waarop de gast de minimale leeftijd heeft
-minimum_age = birth_date.year + MIN_AGE
+        elif menu_choice == 2:
+            current_user = create_profile()
 
-# Bij een geboortedatum op 29-02 is er kans dat de datum van minimumleeftijd niet bestaat,
-# omdat het betreffende jaar geen schrikkeljaar is.
-# Gebruik in dat geval 28-02 als datum voor de minimumleeftijd
-if birth_date.day == 29 and birth_date.month == 2:
-    minimum_age_birthday = datetime.datetime(minimum_age, 2, 28)
-else:
-    minimum_age_birthday = birth_date.replace(year=minimum_age)
+            if current_user is None:
+                continue
 
-if current_date < minimum_age_birthday:
-    print()
-    print(f"De minimale leeftijd voor Casino de Gouden Driehoek is {MIN_AGE} jaar.")
-    print("U heeft deze leeftijd nog niet bereikt.")
-    print(f"U bent van harte welkom vanaf {minimum_age_birthday.day}-{minimum_age_birthday.month}-{minimum_age_birthday.year}.")
-    exit(1)
+            starting_balance = current_user["playing_balance"]
+            current_user["visits"] += 1
+            break
 
-# Bepaal aanspreekvorm
-if gender == "man":
-    salutation = f"meneer {surname}"
-elif gender == "vrouw":
-    salutation = f"mevrouw {surname}"
-else:
-    salutation = f"{first_name} {surname}"
+        elif menu_choice == 0:
+            confirmation = get_confirmation("stoppen")
 
-# Bereken vaste kosten
-subtotal = ADMISSION_PRICE + SERVICE_FEE + MANDATORY_DRINK_PRICE
-vat_amount = round(subtotal * (VAT_RATE / 100), 2)
-fixed_costs = subtotal + vat_amount
+            if confirmation:
+                show_parting_message(trigger="start_page")
+                exit(0)
 
-# Controleer of er voldoende budget is voor toegang tot het casino
-playing_balance = starting_balance - fixed_costs
-if playing_balance > 0:
-    balance_status = "voldoende"
-else:
-    balance_status = "onvoldoende"
+    return current_user, starting_balance,
 
-# Toon resultaat
-print()
-print()
-print(f"Welkom, {salutation}")
-print(SEPARATOR)
-print(f"Startbudget:         € {starting_balance:.2f}")
-print()
-print("Vaste kosten:")
-print(f"- Toegangskosten:    € {ADMISSION_PRICE:.2f}")
-print(f"- Service kosten:    € {SERVICE_FEE:.2f}")
-print(f"- Consumptie:        € {MANDATORY_DRINK_PRICE:.2f}")
-print(f"- BTW ({VAT_RATE:.0f}%):         € {vat_amount:.2f}")
-print(f"Totaal:              € {fixed_costs:.2f}")
-print()
-print(f"Saldo:               € {playing_balance:.2f}")
-print(SEPARATOR)
-print(f"U heeft {balance_status} budget voor toegang tot het casino.")
-print()
 
-if balance_status == "voldoende":
-    game_selection.choose_game(playing_balance)
+def main_menu(current_user):
+    """
+    Displays the main menu and handles the selected menu options.
+
+    Args:
+        current_user (dict): The profile of the current user.
+
+    Returns:
+        dict: The active user profile.
+    """
+    while True:
+        content = "U bevindt zich in de lobby van het casino."
+
+        display_page(location=CASINO_NAME,
+                     title="Lobby",
+                     content=content
+                     )
+
+        menu_options = ["Spellen", "Saldo", "Profiel", "", "Casino verlaten"]
+
+        console.print(
+            Padding(display_menu_table(menu_options, width=70), (0, 0, 1, 5))
+        )
+
+        menu_choice = get_menu_choice(range(0, 4))
+
+        if menu_choice == 1:
+            if current_user["playing_balance"] <= 0:
+                print()
+                print_message("U heeft onvoldoende saldo om te spelen.", "red")
+                print()
+                get_input(CONTINUE_PROMPT)
+
+                manage_balance(current_user)
+
+            else:
+                choose_game(current_user)
+
+        elif menu_choice == 2:
+            manage_balance(current_user)
+
+        elif menu_choice == 3:
+            current_user = show_profile_menu(current_user)
+
+        elif menu_choice == 0:
+            confirmation = get_confirmation("stoppen")
+
+            if confirmation:
+                break
+
+    return current_user
+
+
+# ==============================
+# PROGRAM FLOW
+# ==============================
+
+def main():
+    """
+    Controls the main program flow.
+    """
+    current_user, starting_balance = show_login_page()
+    vat_amount, fixed_costs = calculate_costs()
+
+    if current_user["visits"] == 1:
+        current_user["playing_balance"] = round(starting_balance - fixed_costs, 2)
+        balance_status, balance_status_text = determine_balance_status(current_user)
+
+        show_registration_summary(
+            current_user,
+            starting_balance,
+            vat_amount,
+            fixed_costs,
+            balance_status,
+            balance_status_text,
+        )
+
+    else:
+        balance_status, _ = determine_balance_status(current_user)
+
+    while True:
+        if balance_status == "sufficient":
+            current_user = main_menu(current_user)
+            break
+
+        action = manage_balance(current_user, fixed_costs=fixed_costs, trigger="insufficient_starting_balance")
+
+        if action == "end_program":
+            break
+
+        balance_status, _ = determine_balance_status(current_user)
+
+    show_parting_message(current_user)
+    save_profiles(current_user)
+    exit(0)
+
+
+if __name__ == "__main__":
+    main()
